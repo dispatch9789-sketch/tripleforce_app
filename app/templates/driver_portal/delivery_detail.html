@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Order {{ delivery.order_number }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+        <h1 class="page-title mb-0">Order {{ delivery.order_number }}</h1>
+        <p class="page-subtitle">{{ delivery.service_type or 'Standard' }} delivery{% if delivery.is_medical %} · <span class="text-danger"><i class="bi bi-heart-pulse-fill"></i> Medical Courier</span>{% endif %}</p>
+    </div>
+    <a href="{{ url_for('driver_portal.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to My Deliveries</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <!-- ── Pickup / Delivery Info ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-geo-alt-fill"></i> Route Details</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-1">Pickup</h6>
+                        <p class="mb-1"><strong>{{ delivery.pickup_contact or '—' }}</strong></p>
+                        <p class="mb-1">{{ delivery.pickup_address or '—' }}</p>
+                        {% if delivery.pickup_instructions %}<p class="small text-muted">{{ delivery.pickup_instructions }}</p>{% endif %}
+                        <p class="small">Scheduled: {{ delivery.pickup_datetime | datetime if delivery.pickup_datetime else '—' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted mb-1">Delivery</h6>
+                        <p class="mb-1"><strong>{{ delivery.delivery_contact or '—' }}</strong></p>
+                        <p class="mb-1">{{ delivery.delivery_address or '—' }}</p>
+                        {% if delivery.delivery_instructions %}<p class="small text-muted">{{ delivery.delivery_instructions }}</p>{% endif %}
+                        <p class="small">Deadline: {{ delivery.delivery_deadline | datetime if delivery.delivery_deadline else '—' }}</p>
+                    </div>
+                </div>
+                {% if delivery.is_medical %}
+                <hr>
+                <h6 class="text-muted mb-2"><i class="bi bi-heart-pulse-fill text-danger"></i> Medical Courier Details</h6>
+                <div class="row small">
+                    <div class="col-md-6"><strong>Specimen ID:</strong> {{ delivery.specimen_id or '—' }}</div>
+                    <div class="col-md-6"><strong>Temp Requirement:</strong> {{ delivery.temperature_requirement or '—' }}</div>
+                    <div class="col-md-6"><strong>Pickup Facility:</strong> {{ delivery.pickup_facility or '—' }}</div>
+                    <div class="col-md-6"><strong>Delivery Facility:</strong> {{ delivery.delivery_facility or '—' }}</div>
+                </div>
+                {% endif %}
+                {% if delivery.special_handling %}
+                <hr>
+                <p class="small mb-0"><strong>Special Handling:</strong> {{ delivery.special_handling }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Status Update ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-arrow-repeat"></i> Update Status</div>
+            <div class="card-body">
+                <p>Current status: <span class="badge badge-status badge-pending">{{ delivery.status }}</span></p>
+                <form method="POST" novalidate>
+                    {{ status_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ status_form.status.label(class="form-label") }}
+                        {{ status_form.status(class="form-select", **{"data-testid": "select-status"}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ status_form.notes.label(class="form-label") }}
+                        {{ status_form.notes(class="form-control", rows=2, **{"data-testid": "input-status-notes"}) }}
+                    </div>
+                    {{ status_form.submit(class="btn btn-tf-primary", **{"data-testid": "button-update-status"}) }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <!-- ── Actions ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-clipboard-check"></i> Delivery Actions</div>
+            <div class="card-body d-grid gap-2">
+                <a href="{{ url_for('driver_portal.submit_pod', delivery_id=delivery.id) }}" class="btn btn-tf-amber" data-testid="link-submit-pod">
+                    <i class="bi bi-pen"></i> {{ 'View / Update' if delivery.pod else 'Capture' }} Proof of Delivery
+                </a>
+                {% if delivery.is_medical or delivery.requires_chain_of_custody %}
+                <a href="{{ url_for('driver_portal.submit_custody', delivery_id=delivery.id) }}" class="btn btn-outline-primary" data-testid="link-submit-custody">
+                    <i class="bi bi-shield-check"></i> Add Chain of Custody Record
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Status History ── -->
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history"></i> Status History</div>
+            <div class="card-body">
+                {% if delivery.status_history %}
+                <ul class="list-unstyled mb-0">
+                    {% for h in delivery.status_history %}
+                    <li class="mb-2 pb-2 border-bottom">
+                        <strong>{{ h.status }}</strong> — <span class="text-muted small">{{ h.timestamp | datetime }}</span>
+                        {% if h.notes %}<div class="small text-muted">{{ h.notes }}</div>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No status changes recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

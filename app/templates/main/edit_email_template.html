@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Edit Email Template — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Edit Email Template</h1>
+<p class="page-subtitle">
+    <span class="badge badge-status badge-sent">{{ template_type }}</span>
+    Configure the subject and body for this automated email.
+</p>
+
+<div class="row g-3">
+    <!-- ── Form ── -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ request.path }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.subject.label(class="form-label") }}
+                        {{ form.subject(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.body.label(class="form-label") }}
+                        {{ form.body(class="form-control", rows=14, placeholder="Email body — use {{ variable }} placeholders…") }}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.is_active(class="form-check-input") }}
+                        {{ form.is_active.label(class="form-check-label") }}
+                        <small class="text-muted d-block">Uncheck to disable this automated email while keeping the template.</small>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-tf-primary") }}
+                        <a href="{{ url_for('main.settings') }}#email" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Variable Hints ── -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle"></i> Available Variables</div>
+            <div class="card-body">
+                <p class="text-muted small">Use these placeholders in the subject or body. Wrap them in double curly braces, e.g. <code>{{ '{{ customer_name }}' }}</code>.</p>
+
+                <h6 class="text-muted text-uppercase">Common</h6>
+                <ul class="list-unstyled small">
+                    <li><code>{{ '{{ customer_name }}' }}</code> — Customer or billing name</li>
+                    <li><code>{{ '{{ company_name }}' }}</code> — Your company name</li>
+                    <li><code>{{ '{{ company_phone }}' }}</code> — Company phone</li>
+                    <li><code>{{ '{{ company_email }}' }}</code> — Company email</li>
+                </ul>
+
+                <h6 class="text-muted text-uppercase mt-3">Quote</h6>
+                <ul class="list-unstyled small">
+                    <li><code>{{ '{{ quote_number }}' }}</code></li>
+                    <li><code>{{ '{{ total }}' }}</code></li>
+                    <li><code>{{ '{{ pickup_address }}' }}</code></li>
+                    <li><code>{{ '{{ delivery_address }}' }}</code></li>
+                    <li><code>{{ '{{ expires_at }}' }}</code></li>
+                </ul>
+
+                <h6 class="text-muted text-uppercase mt-3">Delivery</h6>
+                <ul class="list-unstyled small">
+                    <li><code>{{ '{{ order_number }}' }}</code></li>
+                    <li><code>{{ '{{ pickup_datetime }}' }}</code></li>
+                    <li><code>{{ '{{ delivery_deadline }}' }}</code></li>
+                    <li><code>{{ '{{ driver_name }}' }}</code></li>
+                    <li><code>{{ '{{ service_type }}' }}</code></li>
+                </ul>
+
+                <h6 class="text-muted text-uppercase mt-3">Invoice</h6>
+                <ul class="list-unstyled small">
+                    <li><code>{{ '{{ invoice_number }}' }}</code></li>
+                    <li><code>{{ '{{ total_due }}' }}</code></li>
+                    <li><code>{{ '{{ balance_due }}' }}</code></li>
+                    <li><code>{{ '{{ due_date }}' }}</code></li>
+                    <li><code>{{ '{{ payment_terms }}' }}</code></li>
+                </ul>
+            </div>
+        </div>
+
+        {% if template %}
+        <div class="card mt-3">
+            <div class="card-header text-muted small"><i class="bi bi-clock-history"></i> Last Updated</div>
+            <div class="card-body">
+                <p class="mb-0 small text-muted">{{ template.updated_at | datetime }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

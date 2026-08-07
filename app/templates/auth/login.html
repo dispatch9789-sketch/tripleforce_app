@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Login — Triple Force Logistic{% endblock %}
+{% block content %}
+<div class="login-card">
+    <div class="login-logo">
+        <i class="bi bi-truck-front-fill"></i>
+        <h2>Triple Force Logistic LLC</h2>
+        <p>Medical Courier & Logistics Management</p>
+    </div>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control form-control-lg", placeholder="you@tripleforcelogistic.com") }}
+        </div>
+        <div class="mb-3">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control form-control-lg", placeholder="Password") }}
+        </div>
+        <div class="mb-3 form-check">
+            {{ form.remember(class="form-check-input") }}
+            {{ form.remember.label(class="form-check-label") }}
+        </div>
+        {{ form.submit(class="btn btn-tf-amber w-100 btn-lg") }}
+    </form>
+    <div class="text-center mt-3">
+        <a href="{{ url_for('auth.reset_password_request') }}" style="font-size:0.85rem;">Forgot password?</a>
+    </div>
+</div>
+{% endblock %}

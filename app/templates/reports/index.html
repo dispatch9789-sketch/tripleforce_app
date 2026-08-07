@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Revenue Reports — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Revenue & Reports</h1>
+<p class="page-subtitle">Financial overview and business analytics</p>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="{{ url_for('reports.export_csv', report_type='revenue') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> Revenue CSV</a>
+    <a href="{{ url_for('reports.export_csv', report_type='invoices') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> Invoices CSV</a>
+    <a href="{{ url_for('reports.export_csv', report_type='deliveries') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> Deliveries CSV</a>
+    <a href="{{ url_for('reports.export_csv', report_type='customers') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> Customers CSV</a>
+    <a href="{{ url_for('reports.revenue_pdf') }}" class="btn btn-outline-danger btn-sm"><i class="bi bi-file-pdf"></i> Revenue PDF</a>
+</div>
+
+<!-- ── Revenue Summary Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-left:4px solid var(--tf-success);">
+            <div class="stat-label">Revenue Today</div>
+            <div class="stat-value text-success">{{ revenue_today | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-left:4px solid var(--tf-navy);">
+            <div class="stat-label">Revenue This Week</div>
+            <div class="stat-value">{{ revenue_week | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-left:4px solid var(--tf-amber);">
+            <div class="stat-label">Revenue This Month</div>
+            <div class="stat-value">{{ revenue_month | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-left:4px solid var(--tf-navy-dark);">
+            <div class="stat-label">Revenue This Year</div>
+            <div class="stat-value">{{ revenue_year | currency }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Invoice & Delivery Stats ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Outstanding</div>
+            <div class="stat-value text-warning">{{ outstanding | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-value text-danger">{{ overdue_count }}</div>
+            <small class="text-muted">{{ overdue_amount | currency }}</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Paid Invoices</div>
+            <div class="stat-value text-success">{{ paid_count }}</div>
+            <small class="text-muted">{{ paid_amount | currency }}</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">{{ completed }}</div>
+            <small class="text-muted">deliveries</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Cancelled</div>
+            <div class="stat-value text-danger">{{ cancelled }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-label">Total Mileage</div>
+            <div class="stat-value">{{ "%.0f"|format(total_mileage) }}</div>
+            <small class="text-muted">miles</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-label">Avg Delivery Value</div>
+            <div class="stat-value">{{ avg_value | currency }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-label">Expenses This Month</div>
+            <div class="stat-value text-danger">{{ expenses_month | currency }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-label">Net This Month</div>
+            <div class="stat-value text-success">{{ (revenue_month - expenses_month) | currency }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- ── Monthly Trend ── -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-graph-up"></i> Monthly Revenue (Last 6 Months)</div>
+            <div class="card-body">
+                {% if monthly %}
+                <div class="d-flex align-items-end justify-content-around" style="height: 200px; gap: 0.5rem;">
+                    {% set max_rev = (monthly | map(attribute='revenue') | max) or 1 %}
+                    {% for m in monthly %}
+                    <div class="text-center flex-grow-1 d-flex flex-column justify-content-end">
+                        <div style="font-size:0.7rem; color: var(--tf-text-muted);">{{ m.revenue | currency }}</div>
+                        <div style="background: var(--tf-amber); width: 100%; height: {{ (m.revenue / max_rev * 150) if max_rev > 0 else 0 }}px; border-radius: 4px 4px 0 0; min-height: 2px;"></div>
+                        <div style="font-size:0.7rem; color: var(--tf-text-muted); margin-top: 4px;">{{ m.month }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No revenue data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Top Customers ── -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-trophy"></i> Top Clients by Revenue</div>
+            <div class="card-body p-0">
+                {% if cust_revenue %}
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>#</th><th>Customer</th><th class="text-end">Revenue</th></tr></thead>
+                    <tbody>
+                        {% for name, total in cust_revenue %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ name }}</td>
+                            <td class="text-end fw-bold">{{ total | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No revenue data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Revenue by Service Type ── -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-tags"></i> Revenue by Service Type</div>
+            <div class="card-body p-0">
+                {% if svc_revenue %}
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Service Type</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        {% for svc, total in svc_revenue %}
+                        <tr>
+                            <td>{{ svc or 'Unspecified' }}</td>
+                            <td class="text-end fw-bold">{{ total | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No delivery data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

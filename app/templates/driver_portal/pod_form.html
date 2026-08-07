@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Proof of Delivery — Order {{ delivery.order_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+        <h1 class="page-title mb-0">Proof of Delivery</h1>
+        <p class="page-subtitle">Order {{ delivery.order_number }}</p>
+    </div>
+    <a href="{{ url_for('driver_portal.delivery_detail', delivery_id=delivery.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card" style="max-width: 720px;">
+    <div class="card-body">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.recipient_name.label(class="form-label") }}
+                {{ form.recipient_name(class="form-control", **{"data-testid": "input-recipient"}) }}
+                {% for e in form.recipient_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.delivery_date.label(class="form-label") }}
+                    {{ form.delivery_date(class="form-control", type="date", **{"data-testid": "input-delivery-date"}) }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.notes.label(class="form-label") }}
+                {{ form.notes(class="form-control", rows=3, **{"data-testid": "input-pod-notes"}) }}
+            </div>
+
+            <div class="form-check mb-3">
+                {{ form.refused(class="form-check-input", **{"data-testid": "checkbox-refused"}) }}
+                {{ form.refused.label(class="form-check-label") }}
+            </div>
+
+            <div class="mb-3" id="refusal-reason-wrapper" style="display: none;">
+                {{ form.refusal_reason.label(class="form-label") }}
+                {{ form.refusal_reason(class="form-control", rows=2, **{"data-testid": "input-refusal-reason"}) }}
+            </div>
+
+            {{ form.submit(class="btn btn-tf-primary", **{"data-testid": "button-submit-pod"}) }}
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var refusedCheckbox = document.getElementById('{{ form.refused.id }}');
+    var refusalWrapper = document.getElementById('refusal-reason-wrapper');
+    if (refusedCheckbox && refusalWrapper) {
+        function toggleRefusal() {
+            refusalWrapper.style.display = refusedCheckbox.checked ? 'block' : 'none';
+        }
+        refusedCheckbox.addEventListener('change', toggleRefusal);
+        toggleRefusal();
+    }
+});
+</script>
+{% endblock %}

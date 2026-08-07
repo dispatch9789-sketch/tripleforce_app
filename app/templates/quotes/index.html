@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Quotes — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Quotes</h1>
+<p class="page-subtitle">View and manage all customer quotes</p>
+
+<!-- ── Action Bar ── -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <form method="GET" action="{{ url_for('quotes.index') }}" class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0">Status:</label>
+        <select name="status" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="pending" {{ 'selected' if status == 'pending' else '' }}>Pending</option>
+            <option value="accepted" {{ 'selected' if status == 'accepted' else '' }}>Accepted</option>
+            <option value="declined" {{ 'selected' if status == 'declined' else '' }}>Declined</option>
+            <option value="expired" {{ 'selected' if status == 'expired' else '' }}>Expired</option>
+            <option value="converted" {{ 'selected' if status == 'converted' else '' }}>Converted</option>
+        </select>
+    </form>
+    <a href="{{ url_for('quotes.calculator') }}" class="btn btn-tf-amber">
+        <i class="bi bi-calculator"></i> New Quote
+    </a>
+</div>
+
+<!-- ── Quotes Table ── -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if quotes %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Quote Number</th>
+                        <th>Customer</th>
+                        <th>Route</th>
+                        <th class="text-end">Total</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in quotes %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('quotes.detail', quote_id=q.id) }}"><strong>{{ q.quote_number }}</strong></a>
+                        </td>
+                        <td>{{ q.customer_name or (q.customer.business_name if q.customer else '—') }}</td>
+                        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            {{ q.pickup_address or '—' }} → {{ q.delivery_address or '—' }}
+                        </td>
+                        <td class="text-end">{{ q.total | currency }}</td>
+                        <td>
+                            <span class="badge badge-status
+                                {% if q.status == 'pending' %}badge-pending
+                                {% elif q.status == 'accepted' %}badge-accepted
+                                {% elif q.status == 'declined' %}badge-declined
+                                {% elif q.status == 'expired' %}badge-overdue
+                                {% elif q.status == 'converted' %}badge-completed
+                                {% else %}badge-draft{% endif %}">{{ q.status }}</span>
+                        </td>
+                        <td>{{ q.created_at | datetime }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- ── Empty State ── -->
+        <div class="text-center py-5">
+            <i class="bi bi-file-text" style="font-size: 3rem; color: var(--tf-text-muted);"></i>
+            <h2 class="mt-3 text-muted">No quotes found</h2>
+            <p class="text-muted">No quotes match the selected filter, or you haven't created any yet.</p>
+            <a href="{{ url_for('quotes.calculator') }}" class="btn btn-tf-amber">
+                <i class="bi bi-calculator"></i> Create a Quote
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Pagination ── -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="mt-3" aria-label="Quotes pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+            <a class="page-link" href="{{ url_for('quotes.index', page=pagination.prev_num, status=status) }}">
+                <i class="bi bi-chevron-left"></i> Prev
+            </a>
+        </li>
+        {% for p in pagination.iter_pages() %}
+            {% if p %}
+            <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                <a class="page-link" href="{{ url_for('quotes.index', page=p, status=status) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+            <a class="page-link" href="{{ url_for('quotes.index', page=pagination.next_num, status=status) }}">
+                Next <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

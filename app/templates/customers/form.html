@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<p class="page-subtitle">Fill in the customer or prospect details below</p>
+
+<form method="POST" action="{{ request.path }}" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+
+    {# ── Section: Business Info ── #}
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-building"></i> Business Info</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    {{ form.business_name.label(class="form-label") }}
+                    {{ form.business_name(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-select") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.category.label(class="form-label") }}
+                    {{ form.category(class="form-select") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.preferred_delivery_type.label(class="form-label") }}
+                    {{ form.preferred_delivery_type(class="form-select") }}
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        {{ form.tax_exempt(class="form-check-input") }}
+                        {{ form.tax_exempt.label(class="form-check-label") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Section: Address ── #}
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-geo-alt"></i> Address</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12">
+                    {{ form.address.label(class="form-label") }}
+                    {{ form.address(class="form-control") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.city.label(class="form-label") }}
+                    {{ form.city(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.state.label(class="form-label") }}
+                    {{ form.state(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.zip_code.label(class="form-label") }}
+                    {{ form.zip_code(class="form-control") }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Section: Delivery & Billing ── #}
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-truck"></i> Delivery &amp; Billing</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form.billing_terms.label(class="form-label") }}
+                    {{ form.billing_terms(class="form-select") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.contract.label(class="form-label") }}
+                    {{ form.contract(class="form-control") }}
+                    {% if customer and customer.contract_filename %}
+                    <small class="text-muted d-block mt-1">
+                        Current contract: {{ customer.contract_filename }}
+                    </small>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    {{ form.rate_agreement.label(class="form-label") }}
+                    {{ form.rate_agreement(class="form-control", rows=3) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Section: CRM Fields ── #}
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-card-checklist"></i> CRM Fields</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.last_contact_date.label(class="form-label") }}
+                    {{ form.last_contact_date(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.next_follow_up.label(class="form-label") }}
+                    {{ form.next_follow_up(class="form-control") }}
+                </div>
+                <div class="col-12">
+                    {{ form.notes.label(class="form-label") }}
+                    {{ form.notes(class="form-control", rows=4) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Actions ── #}
+    <div class="d-flex gap-2 justify-content-end">
+        {% if customer %}
+        <a href="{{ url_for('customers.detail', customer_id=customer.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        {% if not customer.is_archived %}
+        <form method="POST" action="{{ url_for('customers.archive', customer_id=customer.id) }}"
+              onsubmit="return confirm('Archive &quot;{{ customer.business_name }}&quot;?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger"><i class="bi bi-archive"></i> Archive</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        {% endif %}
+        {{ form.submit(class="btn btn-tf-primary") }}
+    </div>
+</form>
+{% endblock %}

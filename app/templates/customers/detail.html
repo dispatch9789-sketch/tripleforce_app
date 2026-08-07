@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.business_name }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ customer.business_name }}</h1>
+<p class="page-subtitle">
+    <span class="badge badge-status
+        {% if customer.status == 'active' %}badge-accepted
+        {% elif customer.status == 'prospect' %}badge-pending
+        {% else %}badge-draft{% endif %}">{{ customer.status }}</span>
+    {{ customer.category }}
+</p>
+
+<!-- ── Action Buttons ── -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-tf-primary">
+        <i class="bi bi-pencil"></i> Edit
+    </a>
+    <form method="POST" action="{{ url_for('customers.archive', customer_id=customer.id) }}"
+          onsubmit="return confirm('Archive &quot;{{ customer.business_name }}&quot;? It will be hidden from the active list.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-danger">
+            <i class="bi bi-archive"></i> Archive
+        </button>
+    </form>
+</div>
+
+<!-- ── Info Grid ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2"><i class="bi bi-geo-alt"></i> Address</h6>
+                <p class="mb-0">
+                    {{ customer.address or '—' }}<br>
+                    {{ customer.city or '' }}{{ ', ' if customer.city and customer.state else '' }}{{ customer.state or '' }} {{ customer.zip_code or '' }}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2"><i class="bi bi-credit-card"></i> Billing Terms</h6>
+                <p class="mb-0">{{ customer.billing_terms or '—' }}</p>
+                {% if customer.tax_exempt %}
+                <span class="badge badge-status badge-pending mt-1">Tax Exempt</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2"><i class="bi bi-truck"></i> Delivery Preference</h6>
+                <p class="mb-0">{{ customer.preferred_delivery_type or '—' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2"><i class="bi bi-file-earmark-text"></i> Contract</h6>
+                {% if customer.contract_filename %}
+                <p class="mb-0">
+                    <a href="{{ url_for('static', filename='uploads/contracts/' + customer.contract_filename) }}" target="_blank">
+                        <i class="bi bi-download"></i> Download Contract
+                    </a>
+                </p>
+                {% else %}
+                <p class="mb-0 text-muted">No contract on file</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Rate Agreement & Notes ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-file-text"></i> Rate Agreement</div>
+            <div class="card-body">
+                <p class="mb-0 pre-wrap">{{ customer.rate_agreement or 'No rate agreement on file.' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-sticky"></i> Notes</div>
+            <div class="card-body">
+                <p class="mb-0 pre-wrap">{{ customer.notes or 'No notes.' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Revenue Stat ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-success);">
+            <i class="bi bi-cash-coin stat-icon text-success"></i>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value text-success">{{ customer.total_revenue | currency }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card position-relative">
+            <i class="bi bi-calendar-check stat-icon text-primary"></i>
+            <div class="stat-label">Last Contact</div>
+            <div class="stat-value" style="font-size:1.25rem;">{{ customer.last_contact_date | datetime if customer.last_contact_date else '—' }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card position-relative">
+            <i class="bi bi-calendar-event stat-icon text-warning"></i>
+            <div class="stat-label">Next Follow-up</div>
+            <div class="stat-value" style="font-size:1.25rem;">{{ customer.next_follow_up | datetime if customer.next_follow_up else '—' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tabbed Sections ── -->
+<ul class="nav nav-tabs mb-3" id="customerTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#contacts-tab" type="button" role="tab">
+            <i class="bi bi-people"></i> Contacts ({{ contacts|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#deliveries-tab" type="button" role="tab">
+            <i class="bi bi-truck-front"></i> Delivery History ({{ deliveries|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#invoices-tab" type="button" role="tab">
+            <i class="bi bi-receipt"></i> Invoice History ({{ invoices|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Contacts Tab -->
+    <div class="tab-pane fade show active" id="contacts-tab" role="tabpanel">
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-people"></i> Contacts</div>
+                    <div class="card-body p-0">
+                        {% if contacts %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr><th>Name</th><th>Title</th><th>Email</th><th>Phone</th><th>Primary</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for ct in contacts %}
+                                    <tr>
+                                        <td><strong>{{ ct.name }}</strong></td>
+                                        <td>{{ ct.title or '—' }}</td>
+                                        <td>{{ ct.email or '—' }}</td>
+                                        <td>{{ ct.phone or '—' }}</td>
+                                        <td>
+                                            {% if ct.is_primary %}
+                                            <span class="badge badge-status badge-accepted">Yes</span>
+                                            {% else %}
+                                            <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted p-3 mb-0">No contacts yet. Add one using the form.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Contact Form -->
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-person-plus"></i> Add Contact</div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('customers.add_contact', customer_id=customer.id) }}" novalidate>
+                            {{ contact_form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ contact_form.name.label(class="form-label") }}
+                                {{ contact_form.name(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ contact_form.title.label(class="form-label") }}
+                                {{ contact_form.title(class="form-control") }}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ contact_form.email.label(class="form-label") }}
+                                    {{ contact_form.email(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ contact_form.phone.label(class="form-label") }}
+                                    {{ contact_form.phone(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="mb-3 form-check mt-2">
+                                {{ contact_form.is_primary(class="form-check-input") }}
+                                {{ contact_form.is_primary.label(class="form-check-label") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ contact_form.notes.label(class="form-label") }}
+                                {{ contact_form.notes(class="form-control", rows=2) }}
+                            </div>
+                            <div class="mt-3">
+                                {{ contact_form.submit(class="btn btn-tf-amber") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deliveries Tab -->
+    <div class="tab-pane fade" id="deliveries-tab" role="tabpanel">
+        <div class="card">
+            <div class="card-body p-0">
+                {% if deliveries %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr><th>Order #</th><th>Service</th><th>Route</th><th>Status</th><th>Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for d in deliveries %}
+                            <tr>
+                                <td><a href="{{ url_for('dispatch.detail', delivery_id=d.id) }}"><strong>{{ d.order_number }}</strong></a></td>
+                                <td>{{ d.service_type or '—' }}</td>
+                                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ d.pickup_address or '—' }} → {{ d.delivery_address or '—' }}</td>
+                                <td>
+                                    <span class="badge badge-status
+                                        {% if d.status == 'Completed' %}badge-completed
+                                        {% elif d.status == 'Delivered' %}badge-delivered
+                                        {% elif d.status == 'Cancelled' %}badge-cancelled
+                                        {% elif d.status in ['En Route to Pickup', 'In Transit', 'Picked Up', 'Arrived at Pickup', 'Arrived at Delivery'] %}badge-progress
+                                        {% elif d.status == 'Scheduled' %}badge-scheduled
+                                        {% else %}badge-new{% endif %}">{{ d.status }}</span>
+                                </td>
+                                <td>{{ d.quote_amount | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No deliveries for this customer yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Tab -->
+    <div class="tab-pane fade" id="invoices-tab" role="tabpanel">
+        <div class="card">
+            <div class="card-body p-0">
+                {% if invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr><th>Invoice #</th><th>Date</th><th>Amount</th><th>Paid</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in invoices %}
+                            <tr>
+                                <td><a href="{{ url_for('invoices.detail', invoice_id=inv.id) }}"><strong>{{ inv.invoice_number }}</strong></a></td>
+                                <td>{{ inv.created_at | datetime }}</td>
+                                <td>{{ inv.total_due | currency }}</td>
+                                <td>{{ inv.paid_amount | currency }}</td>
+                                <td>
+                                    <span class="badge badge-status
+                                        {% if inv.status == 'Paid' %}badge-paid
+                                        {% elif inv.status == 'Overdue' %}badge-overdue
+                                        {% elif inv.status == 'Draft' %}badge-draft
+                                        {% elif inv.status in ['Sent', 'Viewed'] %}badge-sent
+                                        {% elif inv.status == 'Partially Paid' %}badge-progress
+                                        {% else %}badge-draft{% endif %}">{{ inv.status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No invoices for this customer yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

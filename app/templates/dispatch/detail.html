@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% block title %}{{ delivery.order_number }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+    <h1 class="page-title mb-0">{{ delivery.order_number }}</h1>
+    <span class="badge badge-status
+        {% if delivery.status == 'Completed' %}badge-completed
+        {% elif delivery.status == 'Delivered' %}badge-delivered
+        {% elif delivery.status == 'Cancelled' %}badge-cancelled
+        {% elif delivery.status in ['En Route to Pickup', 'In Transit', 'Picked Up', 'Arrived at Pickup', 'Arrived at Delivery'] %}badge-progress
+        {% elif delivery.status == 'Scheduled' %}badge-scheduled
+        {% elif delivery.status in ['Driver Assigned', 'Confirmed'] %}badge-accepted
+        {% else %}badge-new{% endif %}" style="font-size:0.9rem;">{{ delivery.status }}</span>
+</div>
+<p class="page-subtitle">Created {{ delivery.created_at | datetime }}{% if delivery.customer %} · {{ delivery.customer.business_name }}{% endif %}</p>
+
+<!-- ── Action Buttons ── -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ url_for('dispatch.edit', delivery_id=delivery.id) }}" class="btn btn-sm btn-tf-primary"><i class="bi bi-pencil"></i> Edit</a>
+    {% if delivery.pod %}
+    <a href="{{ url_for('dispatch.pod_pdf', delivery_id=delivery.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> Download POD PDF</a>
+    {% endif %}
+    <a href="{{ url_for('dispatch.board') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Board</a>
+</div>
+
+<!-- ── Status Update Form ── -->
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-arrow-repeat"></i> Update Status</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('dispatch.update_status', delivery_id=delivery.id) }}" novalidate>
+            {{ status_form.hidden_tag() }}
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    {{ status_form.status.label(class="form-label") }}
+                    {{ status_form.status(class="form-select", value=delivery.status) }}
+                </div>
+                <div class="col-md-6">
+                    {{ status_form.notes.label(class="form-label") }}
+                    {{ status_form.notes(class="form-control", placeholder="Optional status note...") }}
+                </div>
+                <div class="col-md-2">
+                    {{ status_form.submit(class="btn btn-tf-amber w-100") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- ── Left Column: Delivery Details ── -->
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-info-circle-fill"></i> Delivery Details</div>
+            <div class="card-body">
+                <dl class="row mb-0" style="font-size:0.9rem;">
+                    <dt class="col-sm-4 text-muted">Customer</dt>
+                    <dd class="col-sm-8">{% if delivery.customer %}<a href="{{ url_for('customers.detail', customer_id=delivery.customer.id) }}">{{ delivery.customer.business_name }}</a>{% else %}Walk-in{% endif %}</dd>
+
+                    <dt class="col-sm-4 text-muted">Service Type</dt>
+                    <dd class="col-sm-8">{{ delivery.service_type or '—' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Package Type</dt>
+                    <dd class="col-sm-8">{{ delivery.package_type or '—' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Quantity</dt>
+                    <dd class="col-sm-8">{{ delivery.quantity or 1 }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Mileage</dt>
+                    <dd class="col-sm-8">{{ delivery.mileage or 0 }} mi</dd>
+
+                    <dt class="col-sm-4 text-muted">Driver</dt>
+                    <dd class="col-sm-8">{{ delivery.driver.name if delivery.driver else 'Unassigned' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Quote Amount</dt>
+                    <dd class="col-sm-8">{{ delivery.quote_amount | currency }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Pickup / Delivery Info -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-geo-alt-fill"></i> Pickup & Delivery</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted text-uppercase" style="font-size:0.75rem;"><i class="bi bi-box-arrow-in-down"></i> Pickup</h6>
+                        <p class="mb-1"><strong>{{ delivery.pickup_contact or '—' }}</strong></p>
+                        <p class="mb-1">{{ delivery.pickup_address or '—' }}</p>
+                        <p class="mb-1 text-muted" style="font-size:0.85rem;">{{ delivery.pickup_datetime | datetime if delivery.pickup_datetime else 'Not scheduled' }}</p>
+                        {% if delivery.pickup_instructions %}<p class="mb-0 text-muted" style="font-size:0.85rem;"><i class="bi bi-info-circle"></i> {{ delivery.pickup_instructions }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted text-uppercase" style="font-size:0.75rem;"><i class="bi bi-box-arrow-up"></i> Delivery</h6>
+                        <p class="mb-1"><strong>{{ delivery.delivery_contact or '—' }}</strong></p>
+                        <p class="mb-1">{{ delivery.delivery_address or '—' }}</p>
+                        <p class="mb-1 text-muted" style="font-size:0.85rem;">Deadline: {{ delivery.delivery_deadline | datetime if delivery.delivery_deadline else '—' }}</p>
+                        {% if delivery.delivery_instructions %}<p class="mb-0 text-muted" style="font-size:0.85rem;"><i class="bi bi-info-circle"></i> {{ delivery.delivery_instructions }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        {% if delivery.internal_notes or delivery.customer_notes or delivery.special_handling %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-sticky"></i> Notes</div>
+            <div class="card-body" style="font-size:0.88rem;">
+                {% if delivery.special_handling %}<p class="mb-2"><strong>Special Handling:</strong> {{ delivery.special_handling }}</p>{% endif %}
+                {% if delivery.internal_notes %}<p class="mb-2"><strong>Internal Notes:</strong> {{ delivery.internal_notes }}</p>{% endif %}
+                {% if delivery.customer_notes %}<p class="mb-0"><strong>Customer Notes:</strong> {{ delivery.customer_notes }}</p>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Medical Courier Section -->
+        {% if delivery.is_medical %}
+        <div class="card mb-3 border-warning">
+            <div class="card-header bg-warning bg-opacity-10"><i class="bi bi-heart-pulse-fill text-warning"></i> Medical Courier Details</div>
+            <div class="card-body">
+                <dl class="row mb-0" style="font-size:0.9rem;">
+                    <dt class="col-sm-5 text-muted">Specimen ID</dt>
+                    <dd class="col-sm-7">{{ delivery.specimen_id or '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Pickup Facility</dt>
+                    <dd class="col-sm-7">{{ delivery.pickup_facility or '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Delivery Facility</dt>
+                    <dd class="col-sm-7">{{ delivery.delivery_facility or '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Temperature Requirement</dt>
+                    <dd class="col-sm-7">{{ delivery.temperature_requirement or '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Tamper Seal Number</dt>
+                    <dd class="col-sm-7">{{ delivery.tamper_seal_number or '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Temp at Pickup</dt>
+                    <dd class="col-sm-7">{{ delivery.temp_at_pickup ~ '°F' if delivery.temp_at_pickup else '—' }}</dd>
+                    <dt class="col-sm-5 text-muted">Temp at Delivery</dt>
+                    <dd class="col-sm-7">{{ delivery.temp_at_delivery ~ '°F' if delivery.temp_at_delivery else '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Chain of Custody -->
+        <div class="card mb-3" id="chain-of-custody">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-link-45deg"></i> Chain of Custody</span>
+                {% if delivery.requires_chain_of_custody %}<span class="badge bg-warning text-dark">Required</span>{% endif %}
+            </div>
+            <div class="card-body">
+                {% if delivery.chain_of_custody %}
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm mb-0" style="font-size:0.82rem;">
+                        <thead>
+                            <tr><th>Releasing</th><th>Accepting</th><th>Release Time</th><th>Temp</th><th>Seal</th><th>Condition</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in delivery.chain_of_custody %}
+                            <tr>
+                                <td>{{ entry.person_releasing or '—' }}</td>
+                                <td>{{ entry.person_accepting or '—' }}</td>
+                                <td>{{ entry.release_time | datetime if entry.release_time else '—' }}</td>
+                                <td>{{ entry.temperature ~ '°F' if entry.temperature else '—' }}</td>
+                                <td>{{ entry.tamper_seal or '—' }}</td>
+                                <td>{{ entry.package_condition or '—' }}</td>
+                            </tr>
+                            {% if entry.incident_report %}
+                            <tr class="table-warning"><td colspan="6"><i class="bi bi-exclamation-triangle"></i> <strong>Incident:</strong> {{ entry.incident_report }}</td></tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size:0.85rem;">No chain of custody entries yet.</p>
+                {% endif %}
+
+                <!-- Add CoC Entry Form -->
+                <form method="POST" action="{{ url_for('dispatch.add_coc_entry', delivery_id=delivery.id) }}" novalidate>
+                    {{ coc_form.hidden_tag() }}
+                    <h6 class="mb-2" style="font-size:0.85rem;">Add Chain of Custody Entry</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            {{ coc_form.person_releasing.label(class="form-label") }}
+                            {{ coc_form.person_releasing(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ coc_form.person_accepting.label(class="form-label") }}
+                            {{ coc_form.person_accepting(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ coc_form.release_time.label(class="form-label") }}
+                            {{ coc_form.release_time(class="form-control form-control-sm", type="datetime-local") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ coc_form.acceptance_time.label(class="form-label") }}
+                            {{ coc_form.acceptance_time(class="form-control form-control-sm", type="datetime-local") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ coc_form.temperature.label(class="form-label") }}
+                            {{ coc_form.temperature(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ coc_form.tamper_seal.label(class="form-label") }}
+                            {{ coc_form.tamper_seal(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ coc_form.package_condition.label(class="form-label") }}
+                            {{ coc_form.package_condition(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-12">
+                            {{ coc_form.incident_report.label(class="form-label") }}
+                            {{ coc_form.incident_report(class="form-control form-control-sm", rows="1") }}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ coc_form.driver_acknowledged(class="form-check-input") }}
+                                {{ coc_form.driver_acknowledged.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            {{ coc_form.submit(class="btn btn-sm btn-tf-amber") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right Column: Timeline & POD ── -->
+    <div class="col-lg-5">
+        <!-- Status History Timeline -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-clock-history"></i> Status Timeline</div>
+            <div class="card-body p-0">
+                {% if delivery.status_history %}
+                <ul class="list-group list-group-flush" style="font-size:0.85rem;">
+                    {% for h in delivery.status_history %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge badge-status
+                                {% if h.status == 'Completed' %}badge-completed
+                                {% elif h.status == 'Delivered' %}badge-delivered
+                                {% elif h.status == 'Cancelled' %}badge-cancelled
+                                {% elif h.status in ['En Route to Pickup', 'In Transit', 'Picked Up', 'Arrived at Pickup', 'Arrived at Delivery'] %}badge-progress
+                                {% elif h.status == 'Scheduled' %}badge-scheduled
+                                {% else %}badge-new{% endif %}">{{ h.status }}</span>
+                            {% if h.notes %}<div class="text-muted mt-1" style="font-size:0.8rem;">{{ h.notes }}</div>{% endif %}
+                            <small class="text-muted">by {{ h.updated_by or 'System' }}</small>
+                        </div>
+                        <small class="text-muted text-end">{{ h.timestamp | datetime }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No status history yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Proof of Delivery -->
+        <div class="card" id="pod">
+            <div class="card-header"><i class="bi bi-clipboard-check-fill"></i> Proof of Delivery</div>
+            <div class="card-body">
+                {% if delivery.pod %}
+                <!-- POD Exists -->
+                <dl class="row mb-2" style="font-size:0.88rem;">
+                    <dt class="col-5 text-muted">Recipient</dt>
+                    <dd class="col-7">{{ delivery.pod.recipient_name }}</dd>
+                    <dt class="col-5 text-muted">Date / Time</dt>
+                    <dd class="col-7">{{ delivery.pod.delivery_date | datetime }}{% if delivery.pod.delivery_time %} {{ delivery.pod.delivery_time.strftime('%I:%M %p') }}{% endif %}</dd>
+                    <dt class="col-5 text-muted">Driver</dt>
+                    <dd class="col-7">{{ delivery.pod.driver_name or '—' }}</dd>
+                    {% if delivery.pod.gps_latitude %}
+                    <dt class="col-5 text-muted">GPS</dt>
+                    <dd class="col-7" style="font-size:0.8rem;">{{ delivery.pod.gps_latitude }}, {{ delivery.pod.gps_longitude }}</dd>
+                    {% endif %}
+                    {% if delivery.pod.notes %}
+                    <dt class="col-5 text-muted">Notes</dt>
+                    <dd class="col-7">{{ delivery.pod.notes }}</dd>
+                    {% endif %}
+                    {% if delivery.pod.refused %}
+                    <dt class="col-5 text-danger">Refused</dt>
+                    <dd class="col-7 text-danger">{{ delivery.pod.refusal_reason or 'Delivery refused' }}</dd>
+                    {% endif %}
+                    {% if delivery.pod.exception_reason %}
+                    <dt class="col-5 text-warning">Exception</dt>
+                    <dd class="col-7">{{ delivery.pod.exception_reason }}</dd>
+                    {% endif %}
+                </dl>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <a href="{{ url_for('dispatch.pod_pdf', delivery_id=delivery.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> POD PDF</a>
+                </div>
+                <!-- Email POD Form -->
+                <form method="POST" action="{{ url_for('dispatch.email_pod', delivery_id=delivery.id) }}" class="d-flex gap-2" novalidate>
+                    {{ pod_form.hidden_tag() }}
+                    <input type="email" name="email" class="form-control form-control-sm" placeholder="recipient@email.com" value="{{ delivery.customer.primary_contact.email if delivery.customer and delivery.customer.primary_contact and delivery.customer.primary_contact.email else '' }}">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-send"></i> Email POD</button>
+                </form>
+
+                {% else %}
+                <!-- No POD — show form -->
+                <form method="POST" action="{{ url_for('dispatch.submit_pod', delivery_id=delivery.id) }}" enctype="multipart/form-data" novalidate>
+                    {{ pod_form.hidden_tag() }}
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            {{ pod_form.recipient_name.label(class="form-label") }}
+                            {{ pod_form.recipient_name(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ pod_form.driver_name.label(class="form-label") }}
+                            {{ pod_form.driver_name(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ pod_form.delivery_date.label(class="form-label") }}
+                            {{ pod_form.delivery_date(class="form-control form-control-sm", type="date") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ pod_form.delivery_time.label(class="form-label") }}
+                            {{ pod_form.delivery_time(class="form-control form-control-sm", placeholder="HH:MM") }}
+                        </div>
+
+                        <!-- Signature Pad -->
+                        <div class="col-12">
+                            <label class="form-label">Signature</label>
+                            <canvas id="signaturePad" class="signature-canvas" width="300" height="150"></canvas>
+                            <div class="mt-1 d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSignature"><i class="bi bi-eraser"></i> Clear</button>
+                            </div>
+                            <input type="hidden" id="signature_data" name="signature_data">
+                        </div>
+
+                        <!-- GPS Capture -->
+                        <div class="col-12">
+                            <label class="form-label">GPS Location</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="captureGPS"><i class="bi bi-geo-alt"></i> Capture GPS</button>
+                                <small class="text-muted" id="gpsDisplay">No location captured</small>
+                            </div>
+                            <input type="hidden" id="gps_latitude" name="gps_latitude">
+                            <input type="hidden" id="gps_longitude" name="gps_longitude">
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="col-12">
+                            {{ pod_form.photo.label(class="form-label") }}
+                            {{ pod_form.photo(class="form-control form-control-sm") }}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="col-12">
+                            {{ pod_form.notes.label(class="form-label") }}
+                            {{ pod_form.notes(class="form-control form-control-sm", rows="2") }}
+                        </div>
+
+                        <!-- Refused / Exceptions -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ pod_form.refused(class="form-check-input") }}
+                                {{ pod_form.refused.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ pod_form.refusal_reason.label(class="form-label") }}
+                            {{ pod_form.refusal_reason(class="form-control form-control-sm", rows="1") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ pod_form.exception_reason.label(class="form-label") }}
+                            {{ pod_form.exception_reason(class="form-control form-control-sm", rows="1") }}
+                        </div>
+
+                        <div class="col-12">
+                            {{ pod_form.submit(class="btn btn-tf-amber w-100") }}
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Signature pad
+(function() {
+    const canvas = document.getElementById('signaturePad');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const hidden = document.getElementById('signature_data');
+    let drawing = false;
+    let lastX = 0, lastY = 0;
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scale = canvas.width / rect.width;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * scale, y: (clientY - rect.top) * scale };
+    }
+
+    function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; }
+    function draw(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        const p = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(p.x, p.y);
+        ctx.strokeStyle = '#1a3a5c';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        lastX = p.x; lastY = p.y;
+    }
+    function stop(e) {
+        if (!drawing) return;
+        drawing = false;
+        hidden.value = canvas.toDataURL('image/png');
+    }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stop);
+    canvas.addEventListener('mouseout', stop);
+    canvas.addEventListener('touchstart', start);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stop);
+
+    const clearBtn = document.getElementById('clearSignature');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hidden.value = '';
+        });
+    }
+})();
+
+// GPS capture
+(function() {
+    const btn = document.getElementById('captureGPS');
+    if (!btn) return;
+    const latInput = document.getElementById('gps_latitude');
+    const lngInput = document.getElementById('gps_longitude');
+    const display = document.getElementById('gpsDisplay');
+
+    btn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            display.textContent = 'Geolocation not supported';
+            return;
+        }
+        display.textContent = 'Capturing...';
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            latInput.value = pos.coords.latitude;
+            lngInput.value = pos.coords.longitude;
+            display.textContent = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+        }, function(err) {
+            display.textContent = 'Location unavailable: ' + err.message;
+        }, { enableHighAccuracy: true, timeout: 10000 });
+    });
+})();
+</script>
+{% endblock %}

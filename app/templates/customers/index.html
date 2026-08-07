@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Customers &amp; Prospects — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Customers &amp; Prospects</h1>
+<p class="page-subtitle">Manage your client relationships and sales pipeline</p>
+
+<!-- ── Filter Bar ── -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('customers.index') }}" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" value="{{ search or '' }}" class="form-control" placeholder="Name, city, or address…">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="prospect" {{ 'selected' if status == 'prospect' else '' }}>Prospect</option>
+                    <option value="active" {{ 'selected' if status == 'active' else '' }}>Active</option>
+                    <option value="archived" {{ 'selected' if status == 'archived' else '' }}>Archived</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="">All</option>
+                    <option value="Laboratory" {{ 'selected' if category == 'Laboratory' else '' }}>Laboratory</option>
+                    <option value="Hospital" {{ 'selected' if category == 'Hospital' else '' }}>Hospital</option>
+                    <option value="Pharmacy" {{ 'selected' if category == 'Pharmacy' else '' }}>Pharmacy</option>
+                    <option value="Imaging Center" {{ 'selected' if category == 'Imaging Center' else '' }}>Imaging Center</option>
+                    <option value="Dialysis Center" {{ 'selected' if category == 'Dialysis Center' else '' }}>Dialysis Center</option>
+                    <option value="Physician Office" {{ 'selected' if category == 'Physician Office' else '' }}>Physician Office</option>
+                    <option value="Law Firm" {{ 'selected' if category == 'Law Firm' else '' }}>Law Firm</option>
+                    <option value="Auto Parts" {{ 'selected' if category == 'Auto Parts' else '' }}>Auto Parts</option>
+                    <option value="Dealership" {{ 'selected' if category == 'Dealership' else '' }}>Dealership</option>
+                    <option value="Other Commercial" {{ 'selected' if category == 'Other Commercial' else '' }}>Other Commercial</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid gap-2">
+                <button type="submit" class="btn btn-tf-primary"><i class="bi bi-funnel"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Action Bar ── -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <span class="text-muted">{{ pagination.total if pagination else 0 }} customer(s) total</span>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('customers.export_csv') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+        <a href="{{ url_for('customers.new') }}" class="btn btn-tf-amber">
+            <i class="bi bi-person-plus"></i> Add Customer
+        </a>
+    </div>
+</div>
+
+<!-- ── Customer Table ── -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Business Name</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>City</th>
+                        <th>Preferred Delivery</th>
+                        <th>Billing Terms</th>
+                        <th>Next Follow-up</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('customers.detail', customer_id=c.id) }}"><strong>{{ c.business_name }}</strong></a>
+                        </td>
+                        <td>{{ c.category }}</td>
+                        <td>
+                            <span class="badge badge-status
+                                {% if c.status == 'active' %}badge-accepted
+                                {% elif c.status == 'prospect' %}badge-pending
+                                {% else %}badge-draft{% endif %}">{{ c.status }}</span>
+                        </td>
+                        <td>{{ c.city or '—' }}</td>
+                        <td>{{ c.preferred_delivery_type or '—' }}</td>
+                        <td>{{ c.billing_terms or '—' }}</td>
+                        <td>{{ c.next_follow_up | datetime if c.next_follow_up else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- ── Empty State ── -->
+        <div class="text-center py-5">
+            <i class="bi bi-people" style="font-size: 3rem; color: var(--tf-text-muted);"></i>
+            <h2 class="mt-3 text-muted">No customers found</h2>
+            <p class="text-muted">No customers match your filters, or you haven't added any yet.</p>
+            <a href="{{ url_for('customers.new') }}" class="btn btn-tf-amber">
+                <i class="bi bi-person-plus"></i> Add Your First Customer
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Pagination ── -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="mt-3" aria-label="Customer pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+            <a class="page-link" href="{{ url_for('customers.index', page=pagination.prev_num, status=status, category=category, q=search) }}">
+                <i class="bi bi-chevron-left"></i> Prev
+            </a>
+        </li>
+        {% for p in pagination.iter_pages() %}
+            {% if p %}
+            <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                <a class="page-link" href="{{ url_for('customers.index', page=p, status=status, category=category, q=search) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+            <a class="page-link" href="{{ url_for('customers.index', page=pagination.next_num, status=status, category=category, q=search) }}">
+                Next <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

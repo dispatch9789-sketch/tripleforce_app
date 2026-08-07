@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+
+# Database files (do not ship the dev database)
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (user-generated content)
+app/static/uploads/*
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment files (secrets)
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+data/
+pgdata/

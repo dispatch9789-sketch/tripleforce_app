@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<p class="page-subtitle">{% if invoice %}Editing {{ invoice.invoice_number }}{% else %}Create a new invoice for billing{% endif %}</p>
+
+{% if invoice %}
+<div class="alert alert-info">
+    <i class="bi bi-link-45deg"></i> <a href="{{ url_for('invoices.detail', invoice_id=invoice.id) }}" class="alert-link">View invoice {{ invoice.invoice_number }}</a>
+</div>
+{% endif %}
+
+<form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <!-- Customer & Billing -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-person-lines-fill"></i> Customer & Billing</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            {{ form.customer_id.label(class="form-label") }}
+                            {{ form.customer_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.billing_name.label(class="form-label") }}
+                            {{ form.billing_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.service_date.label(class="form-label") }}
+                            {{ form.service_date(class="form-control", type="date") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.billing_address.label(class="form-label") }}
+                            {{ form.billing_address(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-truck-front"></i> Service Details</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {{ form.delivery_description.label(class="form-label") }}
+                            {{ form.delivery_description(class="form-control", rows="2") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.mileage.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.mileage(class="form-control") }}
+                                <span class="input-group-text">mi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charges -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-cash-coin"></i> Charges</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.base_charge.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.base_charge(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.additional_charges.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.additional_charges(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.discounts.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.discounts(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.tax_amount.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.tax_amount(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms & Status -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-file-text-fill"></i> Terms & Status</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.payment_terms.label(class="form-label") }}
+                            {{ form.payment_terms(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.due_date.label(class="form-label") }}
+                            {{ form.due_date(class="form-control", type="date") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.payment_instructions.label(class="form-label") }}
+                            {{ form.payment_instructions(class="form-control", rows="2") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-clipboard-check"></i> Summary</div>
+                <div class="card-body">
+                    {% if invoice %}
+                    <dl class="row mb-3" style="font-size:0.88rem;">
+                        <dt class="col-6 text-muted">Invoice #</dt>
+                        <dd class="col-6">{{ invoice.invoice_number }}</dd>
+                        <dt class="col-6 text-muted">Total Due</dt>
+                        <dd class="col-6">{{ invoice.total_due | currency }}</dd>
+                        <dt class="col-6 text-muted">Balance</dt>
+                        <dd class="col-6">{{ invoice.balance | currency }}</dd>
+                    </dl>
+                    {% else %}
+                    <p class="text-muted mb-3" style="font-size:0.88rem;">An invoice number will be generated automatically on save.</p>
+                    {% endif %}
+                    {{ form.submit(class="btn btn-tf-primary w-100 mb-2") }}
+                    <a href="{{ url_for('invoices.index') }}" class="btn btn-outline-secondary w-100">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

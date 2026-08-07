@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <i class="bi bi-exclamation-circle" style="font-size: 4rem; color: var(--tf-text-light);"></i>
+    <h1 class="page-title mt-3">404 — Page Not Found</h1>
+    <p class="text-muted">The page you're looking for doesn't exist or has been moved.</p>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-tf-primary mt-2"><i class="bi bi-house"></i> Back to Dashboard</a>
+</div>
+{% endblock %}

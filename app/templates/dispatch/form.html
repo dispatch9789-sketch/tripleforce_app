@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<p class="page-subtitle">{% if delivery %}Editing delivery {{ delivery.order_number }}{% else %}Create a new delivery order{% endif %}</p>
+
+{% if delivery and delivery.quote_id %}
+<div class="alert alert-info">
+    <i class="bi bi-link-45deg"></i> This delivery is linked to a quote.
+    <a href="{{ url_for('quotes.detail', quote_id=delivery.quote_id) }}" class="alert-link">View original quote</a>
+</div>
+{% endif %}
+
+<form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="row g-3">
+        <!-- ── Left Column ── -->
+        <div class="col-lg-8">
+            <!-- Customer & Assignment -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-person-lines-fill"></i> Customer & Assignment</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.customer_id.label(class="form-label") }}
+                            {{ form.customer_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.driver_id.label(class="form-label") }}
+                            {{ form.driver_id(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pickup Info -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-box-arrow-in-down"></i> Pickup Information</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.pickup_contact.label(class="form-label") }}
+                            {{ form.pickup_contact(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.pickup_address.label(class="form-label") }}
+                            {{ form.pickup_address(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.pickup_datetime.label(class="form-label") }}
+                            {{ form.pickup_datetime(class="form-control", type="datetime-local") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.pickup_instructions.label(class="form-label") }}
+                            {{ form.pickup_instructions(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Info -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-box-arrow-up"></i> Delivery Information</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.delivery_contact.label(class="form-label") }}
+                            {{ form.delivery_contact(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.delivery_address.label(class="form-label") }}
+                            {{ form.delivery_address(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.delivery_deadline.label(class="form-label") }}
+                            {{ form.delivery_deadline(class="form-control", type="datetime-local") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.delivery_instructions.label(class="form-label") }}
+                            {{ form.delivery_instructions(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-gear-fill"></i> Service Details</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.service_type.label(class="form-label") }}
+                            {{ form.service_type(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.package_type.label(class="form-label") }}
+                            {{ form.package_type(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.quantity.label(class="form-label") }}
+                            {{ form.quantity(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.mileage.label(class="form-label") }}
+                            {{ form.mileage(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.quote_amount.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.quote_amount(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            {{ form.special_handling.label(class="form-label") }}
+                            {{ form.special_handling(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Courier Fields -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-heart-pulse-fill"></i> Medical Courier Fields</span>
+                    <div class="form-check form-switch">
+                        {{ form.is_medical(class="form-check-input") }}
+                        {{ form.is_medical.label(class="form-check-label") }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.specimen_id.label(class="form-label") }}
+                            {{ form.specimen_id(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.tamper_seal_number.label(class="form-label") }}
+                            {{ form.tamper_seal_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.pickup_facility.label(class="form-label") }}
+                            {{ form.pickup_facility(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.delivery_facility.label(class="form-label") }}
+                            {{ form.delivery_facility(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.temperature_requirement.label(class="form-label") }}
+                            {{ form.temperature_requirement(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes & Requirements -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-chat-left-text-fill"></i> Notes & Requirements</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.internal_notes.label(class="form-label") }}
+                            {{ form.internal_notes(class="form-control", rows="3") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.customer_notes.label(class="form-label") }}
+                            {{ form.customer_notes(class="form-control", rows="3") }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.requires_chain_of_custody(class="form-check-input") }}
+                                {{ form.requires_chain_of_custody.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.requires_pod(class="form-check-input") }}
+                                {{ form.requires_pod.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Right Column: Summary ── -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-clipboard-check"></i> Order Summary</div>
+                <div class="card-body">
+                    {% if delivery %}
+                    <dl class="row mb-0" style="font-size:0.88rem;">
+                        <dt class="col-5 text-muted">Order #</dt>
+                        <dd class="col-7">{{ delivery.order_number }}</dd>
+                        <dt class="col-5 text-muted">Status</dt>
+                        <dd class="col-7">
+                            <span class="badge badge-status
+                                {% if delivery.status == 'Completed' %}badge-completed
+                                {% elif delivery.status == 'Delivered' %}badge-delivered
+                                {% elif delivery.status == 'Cancelled' %}badge-cancelled
+                                {% elif delivery.status in ['En Route to Pickup', 'In Transit', 'Picked Up', 'Arrived at Pickup', 'Arrived at Delivery'] %}badge-progress
+                                {% elif delivery.status == 'Scheduled' %}badge-scheduled
+                                {% else %}badge-new{% endif %}">{{ delivery.status }}</span>
+                        </dd>
+                        <dt class="col-5 text-muted">Created</dt>
+                        <dd class="col-7">{{ delivery.created_at | datetime }}</dd>
+                    </dl>
+                    {% else %}
+                    <p class="text-muted mb-0" style="font-size:0.88rem;">A unique order number will be generated automatically when this delivery is saved.</p>
+                    {% endif %}
+                    <hr>
+                    {{ form.submit(class="btn btn-tf-primary w-100 mb-2") }}
+                    <a href="{{ url_for('dispatch.board') }}" class="btn btn-outline-secondary w-100">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

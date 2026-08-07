@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}New Reminder — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<p class="page-subtitle">Create a follow-up reminder</p>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.reminder_type.label(class="form-label") }}
+                    {{ form.reminder_type(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.due_date.label(class="form-label") }}
+                    {{ form.due_date(class="form-control", type="date") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.customer_id.label(class="form-label") }}
+                    {{ form.customer_id(class="form-select") }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.priority.label(class="form-label") }}
+                    {{ form.priority(class="form-select") }}
+                </div>
+                <div class="col-12">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="3") }}
+                </div>
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-tf-primary") }}
+                    <a href="{{ url_for('reminders.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block title %}Settings — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Settings</h1>
+<p class="page-subtitle">Manage company info, pricing, email templates, drivers, and expenses</p>
+
+<!-- ── Tab Navigation ── -->
+<ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">
+            <i class="bi bi-building"></i> Company Info
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="pricing-tab" data-bs-toggle="tab" data-bs-target="#pricing" type="button" role="tab">
+            <i class="bi bi-currency-dollar"></i> Pricing
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-templates" type="button" role="tab">
+            <i class="bi bi-envelope"></i> Email Templates
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="drivers-tab" data-bs-toggle="tab" data-bs-target="#drivers" type="button" role="tab">
+            <i class="bi bi-person-badge"></i> Drivers
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="expenses-tab" data-bs-toggle="tab" data-bs-target="#expenses" type="button" role="tab">
+            <i class="bi bi-receipt"></i> Expenses
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
+            <i class="bi bi-shield-lock"></i> Password
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="settingsTabContent">
+
+    {# ════════════ COMPANY INFO ════════════ #}
+    <div class="tab-pane fade show active" id="company" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-building"></i> Company Information</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_company_settings') }}" enctype="multipart/form-data" novalidate>
+                    {{ company_form.hidden_tag() }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ company_form.company_name.label(class="form-label") }}
+                            {{ company_form.company_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.business_type.label(class="form-label") }}
+                            {{ company_form.business_type(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.primary_market.label(class="form-label") }}
+                            {{ company_form.primary_market(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.primary_service.label(class="form-label") }}
+                            {{ company_form.primary_service(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.email.label(class="form-label") }}
+                            {{ company_form.email(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.phone.label(class="form-label") }}
+                            {{ company_form.phone(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.website.label(class="form-label") }}
+                            {{ company_form.website(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.tax_rate.label(class="form-label") }}
+                            {{ company_form.tax_rate(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            {{ company_form.address.label(class="form-label") }}
+                            {{ company_form.address(class="form-control", rows=2) }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ company_form.invoice_prefix.label(class="form-label") }}
+                            {{ company_form.invoice_prefix(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ company_form.quote_prefix.label(class="form-label") }}
+                            {{ company_form.quote_prefix(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ company_form.order_prefix.label(class="form-label") }}
+                            {{ company_form.order_prefix(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.default_payment_terms.label(class="form-label") }}
+                            {{ company_form.default_payment_terms(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ company_form.logo.label(class="form-label") }}
+                            {{ company_form.logo(class="form-control") }}
+                            {% if company_settings and company_settings.logo_filename %}
+                            <small class="text-muted">Current logo: {{ company_settings.logo_filename }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            {{ company_form.payment_instructions.label(class="form-label") }}
+                            {{ company_form.payment_instructions(class="form-control", rows=2) }}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        {{ company_form.submit(class="btn btn-tf-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# ════════════ PRICING ════════════ #}
+    <div class="tab-pane fade" id="pricing" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-currency-dollar"></i> Pricing &amp; Surcharges</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_pricing_settings') }}" novalidate>
+                    {{ pricing_form.hidden_tag() }}
+                    <h6 class="text-muted text-uppercase mb-3">Base Rates</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">{{ pricing_form.base_charge.label(class="form-label") }}{{ pricing_form.base_charge(class="form-control") }}</div>
+                        <div class="col-md-4">{{ pricing_form.per_mile_charge.label(class="form-label") }}{{ pricing_form.per_mile_charge(class="form-control") }}</div>
+                        <div class="col-md-4">{{ pricing_form.minimum_charge.label(class="form-label") }}{{ pricing_form.minimum_charge(class="form-control") }}</div>
+                    </div>
+
+                    <h6 class="text-muted text-uppercase mb-3">Surcharges</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.rush_charge.label(class="form-label") }}{{ pricing_form.rush_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.stat_charge.label(class="form-label") }}{{ pricing_form.stat_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.same_day_charge.label(class="form-label") }}{{ pricing_form.same_day_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.after_hours_charge.label(class="form-label") }}{{ pricing_form.after_hours_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.weekend_charge.label(class="form-label") }}{{ pricing_form.weekend_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.holiday_charge.label(class="form-label") }}{{ pricing_form.holiday_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.wait_time_per_minute.label(class="form-label") }}{{ pricing_form.wait_time_per_minute(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.additional_stop_charge.label(class="form-label") }}{{ pricing_form.additional_stop_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.toll_charge.label(class="form-label") }}{{ pricing_form.toll_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.parking_charge.label(class="form-label") }}{{ pricing_form.parking_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.special_handling_charge.label(class="form-label") }}{{ pricing_form.special_handling_charge(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.temperature_controlled_charge.label(class="form-label") }}{{ pricing_form.temperature_controlled_charge(class="form-control") }}</div>
+                    </div>
+
+                    <h6 class="text-muted text-uppercase mb-3">Discounts &amp; Tax</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">{{ pricing_form.route_discount_pct.label(class="form-label") }}{{ pricing_form.route_discount_pct(class="form-control") }}</div>
+                        <div class="col-md-4">{{ pricing_form.contract_discount_pct.label(class="form-label") }}{{ pricing_form.contract_discount_pct(class="form-control") }}</div>
+                        <div class="col-md-4">{{ pricing_form.tax_rate.label(class="form-label") }}{{ pricing_form.tax_rate(class="form-control") }}</div>
+                    </div>
+
+                    <div class="mt-3">
+                        {{ pricing_form.submit(class="btn btn-tf-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# ════════════ EMAIL TEMPLATES ════════════ #}
+    <div class="tab-pane fade" id="email-templates" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-envelope"></i> Email Templates</div>
+            <div class="card-body p-0">
+                {% if email_templates %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr><th>Template Type</th><th>Subject</th><th>Status</th><th class="text-end">Action</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for t in email_templates %}
+                            <tr>
+                                <td><strong>{{ t.template_type }}</strong></td>
+                                <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ t.subject }}</td>
+                                <td>
+                                    {% if t.is_active %}
+                                    <span class="badge badge-status badge-accepted">Active</span>
+                                    {% else %}
+                                    <span class="badge badge-status badge-draft">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('main.edit_email_template', template_type=t.template_type) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No email templates configured. Use the links below to set up each template type.</p>
+                {% endif %}
+            </div>
+            {% if template_types %}
+            <div class="card-footer bg-light">
+                <small class="text-muted d-block mb-2">Available template types:</small>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tt in template_types %}
+                    <a href="{{ url_for('main.edit_email_template', template_type=tt) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil-square"></i> {{ tt }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ════════════ DRIVERS ════════════ #}
+    <div class="tab-pane fade" id="drivers" role="tabpanel">
+        <div class="row g-3">
+            <!-- Driver List -->
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-person-badge"></i> Drivers</span>
+                        <span class="badge bg-secondary">{{ drivers|length }}</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if drivers %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Status</th><th class="text-end">Action</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in drivers %}
+                                    <tr>
+                                        <td><strong>{{ d.name }}</strong></td>
+                                        <td>{{ d.phone or '—' }}</td>
+                                        <td>{{ d.vehicle_make }} {{ d.vehicle_model }} ({{ d.vehicle_plate or '—' }})</td>
+                                        <td>
+                                            {% if d.is_active %}
+                                            <span class="badge badge-status badge-accepted">Active</span>
+                                            {% else %}
+                                            <span class="badge badge-status badge-draft">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="POST" action="{{ url_for('main.delete_driver', driver_id=d.id) }}" class="d-inline"
+                                                  onsubmit="return confirm('Remove driver &quot;{{ d.name }}&quot;?');">
+                                                {{ driver_form.hidden_tag() }}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted p-3 mb-0">No drivers yet. Add one using the form.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Driver Form -->
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-person-plus"></i> Add Driver</div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('main.add_driver') }}" novalidate>
+                            {{ driver_form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ driver_form.name.label(class="form-label") }}
+                                {{ driver_form.name(class="form-control") }}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ driver_form.phone.label(class="form-label") }}
+                                    {{ driver_form.phone(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.email.label(class="form-label") }}
+                                    {{ driver_form.email(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.license_number.label(class="form-label") }}
+                                    {{ driver_form.license_number(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.license_expiration.label(class="form-label") }}
+                                    {{ driver_form.license_expiration(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.vehicle_make.label(class="form-label") }}
+                                    {{ driver_form.vehicle_make(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.vehicle_model.label(class="form-label") }}
+                                    {{ driver_form.vehicle_model(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.vehicle_plate.label(class="form-label") }}
+                                    {{ driver_form.vehicle_plate(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ driver_form.vehicle_insurance_expiration.label(class="form-label") }}
+                                    {{ driver_form.vehicle_insurance_expiration(class="form-control") }}
+                                </div>
+                                <div class="col-12">
+                                    {{ driver_form.notes.label(class="form-label") }}
+                                    {{ driver_form.notes(class="form-control", rows=2) }}
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                {{ driver_form.submit(class="btn btn-tf-amber") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ════════════ EXPENSES ════════════ #}
+    <div class="tab-pane fade" id="expenses" role="tabpanel">
+        <div class="row g-3">
+            <!-- Recent Expenses -->
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-receipt"></i> Recent Expenses</span>
+                        <span class="badge bg-secondary">{{ expenses|length }}</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if expenses %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th class="text-end">Amount</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for e in expenses %}
+                                    <tr>
+                                        <td>{{ e.date | datetime }}</td>
+                                        <td><span class="badge badge-status badge-new">{{ e.category }}</span></td>
+                                        <td>{{ e.description or '—' }}</td>
+                                        <td>{{ e.vendor or '—' }}</td>
+                                        <td class="text-end">{{ e.amount | currency }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted p-3 mb-0">No expenses recorded yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Expense Form -->
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-plus-circle"></i> Add Expense</div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('main.add_expense') }}" novalidate>
+                            {{ expense_form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ expense_form.date.label(class="form-label") }}
+                                {{ expense_form.date(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ expense_form.category.label(class="form-label") }}
+                                {{ expense_form.category(class="form-select") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ expense_form.description.label(class="form-label") }}
+                                {{ expense_form.description(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ expense_form.amount.label(class="form-label") }}
+                                {{ expense_form.amount(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ expense_form.vendor.label(class="form-label") }}
+                                {{ expense_form.vendor(class="form-control") }}
+                            </div>
+                            <div class="mt-3">
+                                {{ expense_form.submit(class="btn btn-tf-amber") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ════════════ PASSWORD ════════════ #}
+    <div class="tab-pane fade" id="password" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-shield-lock"></i> Change Password</div>
+            <div class="card-body">
+                <p class="text-muted">Update your account password. You'll need to provide your current password for security.</p>
+                <a href="{{ url_for('auth.change_password') }}" class="btn btn-tf-primary">
+                    <i class="bi bi-key"></i> Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

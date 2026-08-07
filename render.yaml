@@ -1,0 +1,28 @@
+# Render deployment configuration
+# Docs: https://render.com/docs/blueprint-spec
+# Deploy: Push to GitHub, create new Blueprint on Render, connect repo
+
+services:
+  - type: web
+    name: tripleforce-logistic
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt && python init_db.py
+    startCommand: gunicorn --config gunicorn.conf.py "run:app"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: PYTHON_VERSION
+        value: "3.10.14"
+      # Add these in the Render dashboard after deploy:
+      # - key: DATABASE_URL  (from Render PostgreSQL addon)
+      # - key: MAIL_USERNAME
+      # - key: MAIL_PASSWORD
+      # - key: MAIL_DEFAULT_SENDER
+    healthCheckPath: /auth/login
+    autoDeploy: true
+    plan: starter  # $7/month — upgrade as needed

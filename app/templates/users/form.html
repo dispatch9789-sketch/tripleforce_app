@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit User' if is_edit else 'Add User' }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ 'Edit User' if is_edit else 'Add New User' }}</h1>
+<p class="page-subtitle">{{ 'Update account details, role, or password' if is_edit else 'Create a new system account with a specific role' }}</p>
+
+<div class="card" style="max-width: 640px;">
+    <div class="card-body">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control", **{"data-testid": "input-email"}) }}
+                {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.first_name.label(class="form-label") }}
+                    {{ form.first_name(class="form-control", **{"data-testid": "input-first-name"}) }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.last_name.label(class="form-label") }}
+                    {{ form.last_name(class="form-control", **{"data-testid": "input-last-name"}) }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.phone.label(class="form-label") }}
+                {{ form.phone(class="form-control", **{"data-testid": "input-phone"}) }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.role.label(class="form-label") }}
+                {{ form.role(class="form-select", **{"data-testid": "select-role"}) }}
+                <div class="form-text">Admin: full access. Dispatcher: operations, no settings/user management. Driver: Driver Portal only.</div>
+            </div>
+
+            <div class="mb-3">
+                {% if is_edit %}
+                    {{ form.new_password.label(class="form-label") }}
+                    {{ form.new_password(class="form-control", **{"data-testid": "input-password"}) }}
+                {% else %}
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control", **{"data-testid": "input-password"}) }}
+                {% endif %}
+                {% for e in (form.new_password.errors if is_edit else form.password.errors) %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="form-check mb-3">
+                {{ form.is_active_user(class="form-check-input", **{"data-testid": "checkbox-active"}) }}
+                {{ form.is_active_user.label(class="form-check-label") }}
+            </div>
+
+            <div class="d-flex gap-2">
+                {{ form.submit(class="btn btn-tf-primary", **{"data-testid": "button-save-user"}) }}
+                <a href="{{ url_for('users.index') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

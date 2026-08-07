@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Reminders — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Reminders & Follow-ups</h1>
+<p class="page-subtitle">Track calls, follow-ups, and important deadlines</p>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="{{ url_for('reminders.index') }}" class="btn {% if show == 'all' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+        <a href="{{ url_for('reminders.index', show='upcoming') }}" class="btn {% if show == 'upcoming' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}">Upcoming</a>
+        <a href="{{ url_for('reminders.index', show='overdue') }}" class="btn {% if show == 'overdue' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}">Overdue</a>
+        <a href="{{ url_for('reminders.index', show='completed') }}" class="btn {% if show == 'completed' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}">Completed</a>
+    </div>
+    <a href="{{ url_for('reminders.new') }}" class="btn btn-tf-amber"><i class="bi bi-plus-lg"></i> New Reminder</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if reminders %}
+            {% for r in reminders %}
+            <div class="reminder-item {% if r.is_overdue %}overdue{% elif r.is_today %}today{% endif %}">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <strong>{{ r.title }}</strong>
+                        <span class="badge {% if r.priority == 'urgent' %}bg-danger{% elif r.priority == 'high' %}bg-warning text-dark{% elif r.priority == 'normal' %}bg-info{% else %}bg-secondary{% endif %}">{{ r.priority }}</span>
+                        {% if r.is_overdue %}<span class="badge bg-danger">OVERDUE</span>{% endif %}
+                    </div>
+                    <small class="text-muted">
+                        Due: {{ r.due_date | datetime }} · {{ r.reminder_type }}
+                        {% if r.customer %} · <a href="{{ url_for('customers.detail', customer_id=r.customer.id) }}">{{ r.customer.business_name }}</a>{% endif %}
+                        {% if r.description %} · {{ r.description[:80] }}{% endif %}
+                    </small>
+                </div>
+                {% if not r.is_completed %}
+                <form method="POST" action="{{ url_for('reminders.complete', reminder_id=r.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-success" title="Mark complete"><i class="bi bi-check-lg"></i></button>
+                </form>
+                {% else %}
+                <span class="badge bg-success">Done</span>
+                {% endif %}
+                <form method="POST" action="{{ url_for('reminders.delete', reminder_id=r.id) }}" class="d-inline" onsubmit="return confirm('Delete this reminder?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center p-4">
+            <i class="bi bi-bell-slash" style="font-size: 2rem; color: var(--tf-text-light);"></i>
+            <p class="text-muted mt-2">No reminders found. <a href="{{ url_for('reminders.new') }}">Create one</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

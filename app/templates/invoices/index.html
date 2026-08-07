@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Invoices — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Invoices</h1>
+<p class="page-subtitle">Manage billing, track payments, and follow up on outstanding balances</p>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <form method="GET" action="{{ url_for('invoices.index') }}" class="d-flex gap-2 align-items-end">
+        <div>
+            <label class="form-label mb-0" for="statusFilter">Status</label>
+            <select name="status" id="statusFilter" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                {% for s in ["Draft", "Sent", "Viewed", "Partially Paid", "Paid", "Overdue", "Cancelled"] %}
+                <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('invoices.export_csv') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+        <a href="{{ url_for('invoices.new') }}" class="btn btn-tf-amber btn-sm"><i class="bi bi-plus-lg"></i> New Invoice</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if invoices %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Service Date</th>
+                        <th>Due Date</th>
+                        <th class="text-end">Total Due</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Balance</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td><a href="{{ url_for('invoices.detail', invoice_id=inv.id) }}"><strong>{{ inv.invoice_number }}</strong></a></td>
+                        <td>{{ inv.billing_name or '—' }}</td>
+                        <td>{{ inv.service_date | datetime if inv.service_date else '—' }}</td>
+                        <td>
+                            {{ inv.due_date | datetime if inv.due_date else '—' }}
+                            {% if inv.due_date and inv.status not in ['Paid', 'Cancelled', 'Draft'] %}
+                            <span class="badge bg-danger ms-1">{% if inv.due_date < today %}Overdue{% endif %}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ inv.total_due | currency }}</td>
+                        <td class="text-end">{{ inv.paid_amount | currency }}</td>
+                        <td class="text-end {% if inv.balance > 0 %}fw-bold text-danger{% endif %}">{{ inv.balance | currency }}</td>
+                        <td>
+                            <span class="badge badge-status
+                                {% if inv.status == 'Paid' %}badge-paid
+                                {% elif inv.status == 'Overdue' %}badge-overdue
+                                {% elif inv.status == 'Partially Paid' %}badge-pending
+                                {% elif inv.status == 'Sent' %}badge-sent
+                                {% elif inv.status == 'Cancelled' %}badge-cancelled
+                                {% elif inv.status == 'Viewed' %}badge-accepted
+                                {% else %}badge-draft{% endif %}">{{ inv.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="bi bi-receipt-cutoff" style="font-size:2.5rem;color:var(--tf-text-light);"></i>
+            <p class="text-muted mt-2 mb-0">No invoices found. <a href="{{ url_for('invoices.new') }}">Create your first invoice</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('invoices.index', page=pagination.prev_num, status=status) }}">&laquo;</a>
+        </li>
+        {% for p in range(1, pagination.pages + 1) %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('invoices.index', page=p, status=status) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('invoices.index', page=pagination.next_num, status=status) }}">&raquo;</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

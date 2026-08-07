@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}Quote Calculator — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Quote Calculator</h1>
+<p class="page-subtitle">Estimate delivery charges based on route, service options, and current pricing rates</p>
+
+<div class="row g-3">
+    <!-- ── Left Column: Form ── -->
+    <div class="col-lg-7">
+        <form id="quoteCalculatorForm" method="POST" action="{{ url_for('quotes.calculator') }}" novalidate>
+            {{ form.hidden_tag() }}
+
+            <!-- Customer Section -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-person-lines-fill"></i> Customer</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            {{ form.customer_id.label(class="form-label") }}
+                            {{ form.customer_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.customer_name.label(class="form-label") }}
+                            {{ form.customer_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.customer_email.label(class="form-label") }}
+                            {{ form.customer_email(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Section -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-geo-alt-fill"></i> Route</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            {{ form.pickup_address.label(class="form-label") }}
+                            {{ form.pickup_address(class="form-control") }}
+                        </div>
+                        <div class="col-md-12">
+                            {{ form.delivery_address.label(class="form-label") }}
+                            {{ form.delivery_address(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.estimated_mileage.label(class="form-label") }}
+                            {{ form.estimated_mileage(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.trip_type.label(class="form-label") }}
+                            {{ form.trip_type(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Options -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-gear-fill"></i> Service Options</div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_rush(class="form-check-input") }}
+                                {{ form.is_rush.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_stat(class="form-check-input") }}
+                                {{ form.is_stat.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_same_day(class="form-check-input") }}
+                                {{ form.is_same_day.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_after_hours(class="form-check-input") }}
+                                {{ form.is_after_hours.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_weekend(class="form-check-input") }}
+                                {{ form.is_weekend.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_holiday(class="form-check-input") }}
+                                {{ form.is_holiday.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.temperature_controlled(class="form-check-input") }}
+                                {{ form.temperature_controlled.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.special_handling(class="form-check-input") }}
+                                {{ form.special_handling.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Charges -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-plus-circle-fill"></i> Additional Charges</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.wait_time_minutes.label(class="form-label") }}
+                            {{ form.wait_time_minutes(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.additional_stops.label(class="form-label") }}
+                            {{ form.additional_stops(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.toll_charge.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.toll_charge(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.parking_charge.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.parking_charge(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discounts -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-tag-fill"></i> Discounts</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.apply_route_discount(class="form-check-input") }}
+                                {{ form.apply_route_discount.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.apply_contract_discount(class="form-check-input") }}
+                                {{ form.apply_contract_discount.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.manual_adjustment.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.manual_adjustment(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.manual_adjustment_note.label(class="form-label") }}
+                            {{ form.manual_adjustment_note(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tax -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-percent"></i> Tax</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.tax_rate.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.tax_rate(class="form-control") }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-chat-left-text-fill"></i> Notes</div>
+                <div class="card-body">
+                    {{ form.notes.label(class="form-label") }}
+                    {{ form.notes(class="form-control", rows="3") }}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                {{ form.submit(class="btn btn-tf-primary btn-lg") }}
+                <a href="{{ url_for('quotes.calculator') }}" class="btn btn-outline-secondary btn-lg">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Right Column: Result Panel ── -->
+    <div class="col-lg-5">
+        {% if calc_result is not none %}
+        <div class="quote-result">
+            <h4 class="mb-3"><i class="bi bi-receipt"></i> Quote Breakdown</h4>
+
+            <div class="quote-line"><span>Base Charge</span><span>{{ calc_result.base_charge | currency }}</span></div>
+            <div class="quote-line"><span>Mileage Charge{% if calc_result.effective_mileage %} ({{ calc_result.effective_mileage }} mi){% endif %}</span><span>{{ calc_result.mileage_charge | currency }}</span></div>
+            {% if calc_result.rush_charge %}<div class="quote-line"><span>Rush Surcharge</span><span>{{ calc_result.rush_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.stat_charge %}<div class="quote-line"><span>STAT Surcharge</span><span>{{ calc_result.stat_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.same_day_charge %}<div class="quote-line"><span>Same-Day Surcharge</span><span>{{ calc_result.same_day_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.after_hours_charge %}<div class="quote-line"><span>After-Hours Surcharge</span><span>{{ calc_result.after_hours_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.weekend_charge %}<div class="quote-line"><span>Weekend Surcharge</span><span>{{ calc_result.weekend_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.holiday_charge %}<div class="quote-line"><span>Holiday Surcharge</span><span>{{ calc_result.holiday_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.wait_time_charge %}<div class="quote-line"><span>Wait Time Charge</span><span>{{ calc_result.wait_time_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.additional_stop_charge %}<div class="quote-line"><span>Additional Stops</span><span>{{ calc_result.additional_stop_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.toll_charge %}<div class="quote-line"><span>Tolls</span><span>{{ calc_result.toll_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.parking_charge %}<div class="quote-line"><span>Parking</span><span>{{ calc_result.parking_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.special_handling_charge %}<div class="quote-line"><span>Special Handling</span><span>{{ calc_result.special_handling_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.temp_control_charge %}<div class="quote-line"><span>Temperature Controlled</span><span>{{ calc_result.temp_control_charge | currency }}</span></div>{% endif %}
+
+            <div class="quote-line fw-bold mt-2"><span>Subtotal</span><span>{{ calc_result.subtotal | currency }}</span></div>
+            {% if calc_result.route_discount %}<div class="quote-line text-warning"><span>Route Discount</span><span>-{{ calc_result.route_discount | currency }}</span></div>{% endif %}
+            {% if calc_result.contract_discount %}<div class="quote-line text-warning"><span>Contract Discount</span><span>-{{ calc_result.contract_discount | currency }}</span></div>{% endif %}
+            {% if calc_result.manual_adjustment %}<div class="quote-line"><span>Manual Adjustment</span><span>{{ calc_result.manual_adjustment | currency }}</span></div>{% endif %}
+            {% if calc_result.tax_amount %}<div class="quote-line"><span>Tax ({{ calc_result.tax_rate }}%)</span><span>{{ calc_result.tax_amount | currency }}</span></div>{% endif %}
+
+            <hr class="border-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-uppercase fw-semibold" style="font-size:0.85rem;">Total</span>
+                <span class="total-amount">{{ calc_result.total | currency }}</span>
+            </div>
+
+            <!-- Save Quote Form -->
+            <hr class="border-light my-3">
+            <h5 class="mb-2"><i class="bi bi-save"></i> Save This Quote</h5>
+            <form method="POST" action="{{ url_for('quotes.save') }}" novalidate>
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="base_charge" value="{{ calc_result.base_charge }}">
+                <input type="hidden" name="mileage_charge" value="{{ calc_result.mileage_charge }}">
+                <input type="hidden" name="rush_charge" value="{{ calc_result.rush_charge }}">
+                <input type="hidden" name="stat_charge" value="{{ calc_result.stat_charge }}">
+                <input type="hidden" name="same_day_charge" value="{{ calc_result.same_day_charge }}">
+                <input type="hidden" name="after_hours_charge" value="{{ calc_result.after_hours_charge }}">
+                <input type="hidden" name="weekend_charge" value="{{ calc_result.weekend_charge }}">
+                <input type="hidden" name="holiday_charge" value="{{ calc_result.holiday_charge }}">
+                <input type="hidden" name="wait_time_charge" value="{{ calc_result.wait_time_charge }}">
+                <input type="hidden" name="additional_stop_charge" value="{{ calc_result.additional_stop_charge }}">
+                <input type="hidden" name="toll_charge" value="{{ calc_result.toll_charge }}">
+                <input type="hidden" name="parking_charge" value="{{ calc_result.parking_charge }}">
+                <input type="hidden" name="special_handling_charge" value="{{ calc_result.special_handling_charge }}">
+                <input type="hidden" name="temp_control_charge" value="{{ calc_result.temp_control_charge }}">
+                <input type="hidden" name="subtotal" value="{{ calc_result.subtotal }}">
+                <input type="hidden" name="route_discount" value="{{ calc_result.route_discount }}">
+                <input type="hidden" name="contract_discount" value="{{ calc_result.contract_discount }}">
+                <input type="hidden" name="manual_adjustment" value="{{ calc_result.manual_adjustment }}">
+                <input type="hidden" name="after_discounts" value="{{ calc_result.after_discounts }}">
+                <input type="hidden" name="tax_rate" value="{{ calc_result.tax_rate }}">
+                <input type="hidden" name="tax_amount" value="{{ calc_result.tax_amount }}">
+                <input type="hidden" name="total" value="{{ calc_result.total }}">
+
+                <div class="mb-2">
+                    <label class="form-label text-light mb-1" for="expires_at">Quote Valid Until</label>
+                    <input type="date" class="form-control" id="expires_at" name="expires_at" value="{{ today.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light mb-1" for="save_notes">Notes</label>
+                    <textarea class="form-control" id="save_notes" name="notes" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-tf-amber w-100"><i class="bi bi-save"></i> Save Quote</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="quote-result">
+            <h4 class="mb-2"><i class="bi bi-calculator"></i> Quote Result</h4>
+            <p class="mb-0" style="font-size:0.9rem; opacity:0.85;">
+                Fill out the form and click <strong>Calculate Quote</strong> to see the estimated charges here.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Current Pricing Rates Reference -->
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-info-circle"></i> Current Pricing Rates</div>
+            <div class="card-body" style="font-size:0.85rem;">
+                <div class="row g-2">
+                    <div class="col-6"><span class="text-muted">Base Charge:</span> {{ pricing.base_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Per Mile:</span> {{ pricing.per_mile_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Minimum:</span> {{ pricing.minimum_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Tax Rate:</span> {{ pricing.tax_rate }}%</div>
+                    <div class="col-6"><span class="text-muted">Rush:</span> {{ pricing.rush_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">STAT:</span> {{ pricing.stat_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Same-Day:</span> {{ pricing.same_day_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">After Hours:</span> {{ pricing.after_hours_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Weekend:</span> {{ pricing.weekend_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Holiday:</span> {{ pricing.holiday_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Wait/Min:</span> {{ pricing.wait_time_per_minute | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Add'l Stop:</span> {{ pricing.additional_stop_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Special Handling:</span> {{ pricing.special_handling_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Temp Control:</span> {{ pricing.temperature_controlled_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Route Discount:</span> {{ pricing.route_discount_pct }}%</div>
+                    <div class="col-6"><span class="text-muted">Contract Discount:</span> {{ pricing.contract_discount_pct }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

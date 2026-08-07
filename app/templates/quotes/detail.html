@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}{{ quote.quote_number }} — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ quote.quote_number }}</h1>
+<p class="page-subtitle">
+    Created {{ quote.created_at | datetime }}
+    {% if quote.expires_at %} · Expires {{ quote.expires_at | datetime }}{% endif %}
+</p>
+
+<!-- ── Status & Action Bar ── -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-status
+            {% if quote.status == 'pending' %}badge-pending
+            {% elif quote.status == 'accepted' %}badge-accepted
+            {% elif quote.status == 'declined' %}badge-declined
+            {% elif quote.status == 'expired' %}badge-overdue
+            {% elif quote.status == 'converted' %}badge-completed
+            {% else %}badge-draft{% endif %}" style="font-size:0.95rem;">{{ quote.status }}</span>
+
+        <!-- Status change dropdown -->
+        <div class="dropdown d-inline-block">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-repeat"></i> Change Status
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <form method="POST" action="{{ url_for('quotes.update_status', quote_id=quote.id) }}" class="dropdown-item-text">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="pending">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none w-100 text-start">Pending</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="POST" action="{{ url_for('quotes.update_status', quote_id=quote.id) }}" class="dropdown-item-text">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="accepted">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none w-100 text-start">Accepted</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="POST" action="{{ url_for('quotes.update_status', quote_id=quote.id) }}" class="dropdown-item-text">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="declined">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none w-100 text-start">Declined</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="POST" action="{{ url_for('quotes.update_status', quote_id=quote.id) }}" class="dropdown-item-text">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="expired">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none w-100 text-start">Expired</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="POST" action="{{ url_for('quotes.update_status', quote_id=quote.id) }}" class="dropdown-item-text">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="converted">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none w-100 text-start">Converted</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('quotes.pdf', quote_id=quote.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-pdf"></i> Download PDF
+        </a>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#emailModal">
+            <i class="bi bi-envelope"></i> Email
+        </button>
+        {% if quote.status != 'converted' %}
+        <form method="POST" action="{{ url_for('quotes.convert_to_delivery', quote_id=quote.id) }}"
+              onsubmit="return confirm('Convert this quote to a delivery order?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-tf-amber">
+                <i class="bi bi-arrow-right-circle"></i> Convert to Delivery
+            </button>
+        </form>
+        {% else %}
+        {% if quote.delivery %}
+        <a href="{{ url_for('dispatch.detail', delivery_id=quote.delivery.id) }}" class="btn btn-success">
+            <i class="bi bi-truck-front"></i> View Delivery
+        </a>
+        {% else %}
+        <span class="badge badge-status badge-completed" style="font-size:0.95rem;">Already Converted</span>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Info Grid: Customer & Route ── -->
+<div class="row g-3 mb-4">
+    <!-- Customer Info -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-person"></i> Customer</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Name</dt>
+                    <dd class="col-sm-8">
+                        {% if quote.customer %}
+                            <a href="{{ url_for('customers.detail', customer_id=quote.customer.id) }}">{{ quote.customer.business_name }}</a>
+                        {% else %}
+                            {{ quote.customer_name or '—' }}
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ quote.customer_email or '—' }}</dd>
+                    <dt class="col-sm-4">Trip Type</dt>
+                    <dd class="col-sm-8">{{ quote.trip_type }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Info -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-signpost-split"></i> Route</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4"><i class="bi bi-geo-alt-fill text-primary"></i> Pickup</dt>
+                    <dd class="col-sm-8">{{ quote.pickup_address or '—' }}</dd>
+                    <dt class="col-sm-4"><i class="bi bi-flag-fill text-success"></i> Delivery</dt>
+                    <dd class="col-sm-8">{{ quote.delivery_address or '—' }}</dd>
+                    <dt class="col-sm-4">Mileage</dt>
+                    <dd class="col-sm-8">{{ quote.estimated_mileage }} mi</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Service Options ── -->
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-gear"></i> Service Options</div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% set options = [] %}
+            {% if quote.is_rush %}{% set _ = options.append('Rush') %}{% endif %}
+            {% if quote.is_stat %}{% set _ = options.append('STAT') %}{% endif %}
+            {% if quote.is_same_day %}{% set _ = options.append('Same-Day') %}{% endif %}
+            {% if quote.is_after_hours %}{% set _ = options.append('After Hours') %}{% endif %}
+            {% if quote.is_weekend %}{% set _ = options.append('Weekend') %}{% endif %}
+            {% if quote.is_holiday %}{% set _ = options.append('Holiday') %}{% endif %}
+            {% if quote.temperature_controlled %}{% set _ = options.append('Temperature Controlled') %}{% endif %}
+            {% if options %}
+                {% for opt in options %}
+                <span class="badge badge-status badge-progress">{{ opt }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="text-muted">No special service options selected</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Charges Breakdown ── -->
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-receipt"></i> Charges Breakdown</div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <tbody>
+                <tr class="quote-line"><td>Base Delivery Charge</td><td class="text-end">{{ quote.base_charge | currency }}</td></tr>
+                {% if quote.mileage_charge %}<tr class="quote-line"><td>Mileage Charge</td><td class="text-end">{{ quote.mileage_charge | currency }}</td></tr>{% endif %}
+                {% if quote.rush_charge %}<tr class="quote-line"><td>Rush Surcharge</td><td class="text-end">{{ quote.rush_charge | currency }}</td></tr>{% endif %}
+                {% if quote.after_hours_charge %}<tr class="quote-line"><td>After-Hours Surcharge</td><td class="text-end">{{ quote.after_hours_charge | currency }}</td></tr>{% endif %}
+                {% if quote.weekend_charge %}<tr class="quote-line"><td>Weekend Surcharge</td><td class="text-end">{{ quote.weekend_charge | currency }}</td></tr>{% endif %}
+                {% if quote.holiday_charge %}<tr class="quote-line"><td>Holiday Surcharge</td><td class="text-end">{{ quote.holiday_charge | currency }}</td></tr>{% endif %}
+                {% if quote.wait_time_charge %}<tr class="quote-line"><td>Wait Time Charge</td><td class="text-end">{{ quote.wait_time_charge | currency }}</td></tr>{% endif %}
+                {% if quote.additional_stop_charge %}<tr class="quote-line"><td>Additional Stop Charge</td><td class="text-end">{{ quote.additional_stop_charge | currency }}</td></tr>{% endif %}
+                {% if quote.toll_charge %}<tr class="quote-line"><td>Toll</td><td class="text-end">{{ quote.toll_charge | currency }}</td></tr>{% endif %}
+                {% if quote.parking_charge %}<tr class="quote-line"><td>Parking</td><td class="text-end">{{ quote.parking_charge | currency }}</td></tr>{% endif %}
+                {% if quote.special_handling_charge %}<tr class="quote-line"><td>Special Handling</td><td class="text-end">{{ quote.special_handling_charge | currency }}</td></tr>{% endif %}
+                {% if quote.temp_control_charge %}<tr class="quote-line"><td>Temperature-Controlled Charge</td><td class="text-end">{{ quote.temp_control_charge | currency }}</td></tr>{% endif %}
+                {% if quote.route_discount %}<tr class="quote-line"><td>Route Discount</td><td class="text-end text-danger">−{{ quote.route_discount | currency }}</td></tr>{% endif %}
+                {% if quote.contract_discount %}<tr class="quote-line"><td>Contract Discount</td><td class="text-end text-danger">−{{ quote.contract_discount | currency }}</td></tr>{% endif %}
+                {% if quote.manual_adjustment %}<tr class="quote-line"><td>Manual Adjustment{% if quote.manual_adjustment_note %} ({{ quote.manual_adjustment_note }}){% endif %}</td><td class="text-end">{{ quote.manual_adjustment | currency }}</td></tr>{% endif %}
+                {% if quote.tax_amount %}<tr class="quote-line"><td>Tax ({{ quote.tax_rate }}%)</td><td class="text-end">{{ quote.tax_amount | currency }}</td></tr>{% endif %}
+                <tr class="quote-line" style="border-top:2px solid var(--tf-border);">
+                    <td><strong>Total</strong></td>
+                    <td class="text-end"><strong class="text-success" style="font-size:1.25rem;">{{ quote.total | currency }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Notes & Expiry ── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-sticky"></i> Notes</div>
+            <div class="card-body">
+                <p class="mb-0 pre-wrap">{{ quote.notes or 'No notes.' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-calendar-event"></i> Validity</div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt class="text-muted small">Expires On</dt>
+                    <dd class="mb-2">{{ quote.expires_at | datetime if quote.expires_at else 'No expiration' }}</dd>
+                    <dt class="text-muted small">Tax Rate</dt>
+                    <dd class="mb-0">{{ quote.tax_rate }}%</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Email Modal ── -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('quotes.email_quote', quote_id=quote.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="emailModalLabel"><i class="bi bi-envelope"></i> Email Quote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">A PDF copy of <strong>{{ quote.quote_number }}</strong> will be attached.</p>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Recipient Email</label>
+                        <input type="email" name="email" id="email" class="form-control"
+                               value="{{ quote.customer_email or '' }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-tf-primary"><i class="bi bi-send"></i> Send Quote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

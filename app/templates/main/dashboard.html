@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Dashboard</h1>
+<p class="page-subtitle">{{ company_settings.company_name if company_settings else 'Triple Force Logistic LLC' }}</p>
+
+<!-- ── Stats Grid ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="stat-card position-relative">
+            <i class="bi bi-calendar-check stat-icon text-primary"></i>
+            <div class="stat-label">Scheduled Today</div>
+            <div class="stat-value">{{ deliveries_today }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="stat-card position-relative">
+            <i class="bi bi-truck stat-icon text-warning"></i>
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value">{{ in_progress }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="stat-card position-relative">
+            <i class="bi bi-check-circle stat-icon text-success"></i>
+            <div class="stat-label">Completed Today</div>
+            <div class="stat-value">{{ completed_today }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="stat-card position-relative">
+            <i class="bi bi-file-text stat-icon text-info"></i>
+            <div class="stat-label">Pending Quotes</div>
+            <div class="stat-value">{{ pending_quotes }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Revenue Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-success);">
+            <i class="bi bi-cash-coin stat-icon text-success"></i>
+            <div class="stat-label">Revenue Today</div>
+            <div class="stat-value text-success">{{ revenue_today | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-navy);">
+            <i class="bi bi-calendar-week stat-icon text-primary"></i>
+            <div class="stat-label">Revenue This Week</div>
+            <div class="stat-value">{{ revenue_week | currency }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-amber);">
+            <i class="bi bi-calendar-month stat-icon text-warning"></i>
+            <div class="stat-label">Revenue This Month</div>
+            <div class="stat-value">{{ revenue_month | currency }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- ── Left Column ── -->
+    <div class="col-lg-8">
+        <!-- Recent Deliveries -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-truck-front"></i> Recent Deliveries</span>
+                <a href="{{ url_for('dispatch.board') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_deliveries %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr><th>Order #</th><th>Customer</th><th>Route</th><th>Status</th><th>Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for d in recent_deliveries %}
+                            <tr>
+                                <td><a href="{{ url_for('dispatch.detail', delivery_id=d.id) }}"><strong>{{ d.order_number }}</strong></a></td>
+                                <td>{{ d.customer.business_name if d.customer else '—' }}</td>
+                                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ d.pickup_address or '—' }}</td>
+                                <td><span class="badge badge-status
+                                    {% if d.status == 'Completed' %}badge-completed
+                                    {% elif d.status == 'Delivered' %}badge-delivered
+                                    {% elif d.status == 'Cancelled' %}badge-cancelled
+                                    {% elif d.status in ['En Route to Pickup', 'In Transit', 'Picked Up'] %}badge-progress
+                                    {% elif d.status == 'Scheduled' %}badge-scheduled
+                                    {% else %}badge-new{% endif %}">{{ d.status }}</span></td>
+                                <td>{{ d.quote_amount | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No deliveries yet. <a href="{{ url_for('dispatch.new_delivery') }}">Create one</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Customers -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people"></i> Recent Customer Activity</span>
+                <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_customers %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Business</th><th>Category</th><th>Status</th><th>Next Follow-up</th></tr></thead>
+                        <tbody>
+                            {% for c in recent_customers %}
+                            <tr>
+                                <td><a href="{{ url_for('customers.detail', customer_id=c.id) }}"><strong>{{ c.business_name }}</strong></a></td>
+                                <td>{{ c.category }}</td>
+                                <td><span class="badge badge-status {% if c.status == 'active' %}badge-accepted{% elif c.status == 'prospect' %}badge-pending{% else %}badge-draft{% endif %}">{{ c.status }}</span></td>
+                                <td>{{ c.next_follow_up | datetime if c.next_follow_up else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted p-3 mb-0">No customers yet. <a href="{{ url_for('customers.new') }}">Add one</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right Column ── -->
+    <div class="col-lg-4">
+        <!-- Alerts -->
+        {% if overdue_reminders %}
+        <div class="card mb-3 border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i> Overdue Reminders ({{ overdue_reminders|length }})
+            </div>
+            <div class="card-body p-0">
+                {% for r in overdue_reminders %}
+                <div class="reminder-item overdue">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ r.title }}</div>
+                        <small class="text-muted">Due: {{ r.due_date | datetime }} · {{ r.reminder_type }}</small>
+                    </div>
+                    <a href="{{ url_for('reminders.index') }}" class="btn btn-sm btn-outline-danger">View</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Upcoming Reminders -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell"></i> Upcoming Reminders</span>
+                <a href="{{ url_for('reminders.new') }}" class="btn btn-sm btn-tf-amber">+ Add</a>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_reminders %}
+                    {% for r in upcoming_reminders %}
+                    <div class="reminder-item {% if r.is_overdue %}overdue{% elif r.is_today %}today{% endif %}">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ r.title }}</div>
+                            <small class="text-muted">{{ r.due_date | datetime }} · {{ r.reminder_type }}
+                                {% if r.customer %} · <a href="{{ url_for('customers.detail', customer_id=r.customer.id) }}">{{ r.customer.business_name }}</a>{% endif %}
+                            </small>
+                        </div>
+                        <span class="badge {% if r.priority == 'urgent' %}bg-danger{% elif r.priority == 'high' %}bg-warning text-dark{% elif r.priority == 'normal' %}bg-info{% else %}bg-secondary{% endif %}">{{ r.priority }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted p-3 mb-0">No upcoming reminders.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Unpaid Invoices Alert -->
+        {% if unpaid_invoices %}
+        <div class="card mt-3 border-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-warning fw-bold" style="font-size:1.5rem;">{{ unpaid_invoices }}</div>
+                        <div class="text-muted" style="font-size:0.8rem;">Unpaid Invoices</div>
+                    </div>
+                    <a href="{{ url_for('invoices.index', status='Sent') }}" class="btn btn-sm btn-outline-warning">View</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
