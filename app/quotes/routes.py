@@ -78,7 +78,7 @@ def calculator():
             "delivery_address": form.delivery_address.data,
             "manual_adjustment_note": form.manual_adjustment_note.data,
             "notes": form.notes.data,
-            **calc_result,
+            **calc_result,}
     return render_template("quotes/calculator.html", form=form, calc_result=calc_result, pricing=pricing)
 
 
