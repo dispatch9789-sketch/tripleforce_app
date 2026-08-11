@@ -111,7 +111,7 @@ def calculate_quote(form_data, pricing=None):
 
     print("PRICING DEBUG:", pricing.base_charge, pricing.per_mile_charge)
 
-    mileage = float(form_data.get("estimated_mileage", 0) or 0)
+    mileage = float(form_data.get("mileage", 0) or 0)
     trip_type = form_data.get("trip_type", "one-way")
 
     # Double mileage for round-trip
