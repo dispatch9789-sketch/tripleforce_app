@@ -45,9 +45,18 @@ def calculator():
     pricing = get_pricing_settings()
 
     if form.validate_on_submit():
+                mileage = form.estimated_mileage.data
+        if not mileage and form.pickup_address.data and form.delivery_address.data:
+            auto_mileage = get_driving_distance(
+                form.pickup_address.data,
+                form.delivery_address.data,
+            )
+            if auto_mileage is not None:
+                form.estimated_mileage.data = auto_mileage
+                mileage = auto_mileage
         # Convert form to dict for calculator
         form_data = {
-            "estimated_mileage": form.estimated_mileage.data,
+            "estimated_mileage":mileage,
             "trip_type": form.trip_type.data,
             "is_rush": form.is_rush.data,
             "is_stat": form.is_stat.data,
