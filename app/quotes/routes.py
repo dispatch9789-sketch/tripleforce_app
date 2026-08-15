@@ -100,6 +100,23 @@ def calculator():
     return render_template("quotes/calculator.html", form=form, calc_result=calc_result, pricing=pricing)
 
 
+@quotes.route("/calculate-mileage", methods=["POST"])
+@login_required
+@dispatcher_or_above
+def calculate_mileage():
+    """Return the driving mileage (miles) between two addresses as JSON."""
+    data = request.get_json(silent=True) or {}
+    pickup = (data.get("pickup_address") or "").strip()
+    delivery = (data.get("delivery_address") or "").strip()
+    if not pickup or not delivery:
+        return jsonify({"error": "Both pickup and delivery addresses are required."}), 400
+
+    miles = get_driving_distance(pickup, delivery)
+    if miles is None:
+        return jsonify({"error": "Unable to calculate mileage for the given addresses."})
+    return jsonify({"miles": miles})
+
+
 @quotes.route("/save", methods=["POST"])
 @login_required
 @dispatcher_or_above
