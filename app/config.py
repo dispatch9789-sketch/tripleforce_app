@@ -37,6 +37,9 @@ class Config:
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "dispatch@tripleforcelogistic.com")
 
+    # ── Google Maps Routes API ──
+    GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+
     # ── App ──
     FLASK_ENV = os.environ.get("FLASK_ENV", "development")
     DEBUG = os.environ.get("FLASK_DEBUG", "1").lower() in ("true", "1", "yes")

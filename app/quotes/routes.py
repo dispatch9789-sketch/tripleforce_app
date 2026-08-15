@@ -12,6 +12,7 @@ from app.utils import (
     calculate_quote, get_pricing_settings, get_company_settings,
     get_next_quote_number, get_next_order_number,
     generate_quote_pdf, send_email, render_email_template,
+    get_driving_distance,
 )
 
 quotes = Blueprint("quotes", __name__)
@@ -44,17 +45,17 @@ def calculator():
     calc_result = None
     pricing = get_pricing_settings()
 
+    # Auto-calculate mileage before validation so a blank mileage can be filled server-side.
+    if request.method == "POST" and not form.estimated_mileage.data and form.pickup_address.data and form.delivery_address.data:
+        auto_mileage = get_driving_distance(
+            form.pickup_address.data,
+            form.delivery_address.data,
+        )
+        if auto_mileage is not None:
+            form.estimated_mileage.data = auto_mileage
+
     if form.validate_on_submit():
-            # Auto-calculate mileage if not provided manually
         mileage = form.estimated_mileage.data
-        if not mileage and form.pickup_address.data and form.delivery_address.data:
-            auto_mileage = get_driving_distance(
-                form.pickup_address.data,
-                form.delivery_address.data,
-            )
-            if auto_mileage is not None:
-                form.estimated_mileage.data = auto_mileage
-                mileage = auto_mileage
         
             
                 

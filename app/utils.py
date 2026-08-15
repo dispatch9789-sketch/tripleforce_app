@@ -689,3 +689,69 @@ def inject_settings():
         "today": _date.today(),
         "now": _dt.utcnow,
     }
+
+
+# ═══════════════════════════════════════════════════════════════
+#  GOOGLE MAPS ROUTES API - DRIVING DISTANCE
+# ═══════════════════════════════════════════════════════════════
+def get_driving_distance(pickup_address, delivery_address):
+    """
+    Call the Google Maps Routes API (computeRoutes) and return the
+    driving distance in miles between pickup_address and delivery_address.
+
+    Returns a float (miles, 2 dp) or None on any failure.
+    """
+    if not pickup_address or not delivery_address:
+        return None
+
+    api_key = current_app.config.get("GOOGLE_MAPS_API_KEY") or os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        current_app.logger.error("GOOGLE_MAPS_API_KEY is not configured; cannot calculate mileage.")
+        return None
+
+    import json
+    import urllib.request
+    import urllib.error
+
+    url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    payload = {
+        "origin": {"address": pickup_address},
+        "destination": {"address": delivery_address},
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_AWARE",
+        "units": "IMPERIAL",
+    }
+    body = json.dumps(payload).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": "routes.distanceMeters",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        current_app.logger.error(f"Google Routes API HTTPError {e.code}: {e.reason}")
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Google Routes API request failed: {e}")
+        return None
+
+    try:
+        routes = data.get("routes", [])
+        if not routes:
+            current_app.logger.error(f"Google Routes API returned no routes: {data}")
+            return None
+        distance_meters = float(routes[0].get("distanceMeters", 0))
+        miles = round(distance_meters / 1609.344, 2)
+        return miles if miles > 0 else None
+    except (TypeError, ValueError, IndexError) as e:
+        current_app.logger.error(f"Failed to parse Google Routes API response: {e}")
+        return None

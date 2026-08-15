@@ -316,3 +316,58 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var pickupField = document.getElementById("pickup_address");
+    var deliveryField = document.getElementById("delivery_address");
+    var mileageField = document.getElementById("estimated_mileage");
+    if (!pickupField || !deliveryField || !mileageField) return;
+
+    var timer = null;
+    var mileageUrl = "{{ url_for('quotes.calculate_mileage') }}";
+
+    function calculateMileage() {
+        var pickup = pickupField.value.trim();
+        var delivery = deliveryField.value.trim();
+        if (!pickup || !delivery) return;
+
+        var csrfToken = document.querySelector('input[name="csrf_token"]');
+        var headers = { "Content-Type": "application/json" };
+        if (csrfToken) headers["X-CSRFToken"] = csrfToken.value;
+
+        mileageField.placeholder = "Calculating...";
+
+        fetch(mileageUrl, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: headers,
+            body: JSON.stringify({ pickup_address: pickup, delivery_address: delivery })
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.miles !== undefined && data.miles !== null) {
+                    mileageField.value = data.miles;
+                    mileageField.dispatchEvent(new Event("input", { bubbles: true }));
+                } else if (data.error) {
+                    console.warn("Mileage calculation error:", data.error);
+                }
+            })
+            .catch(function (err) {
+                console.error("Mileage fetch failed:", err);
+            });
+    }
+
+    function scheduleCalculation() {
+        clearTimeout(timer);
+        timer = setTimeout(calculateMileage, 800);
+    }
+
+    pickupField.addEventListener("input", scheduleCalculation);
+    pickupField.addEventListener("blur", calculateMileage);
+    deliveryField.addEventListener("input", scheduleCalculation);
+    deliveryField.addEventListener("blur", calculateMileage);
+})();
+</script>
+{% endblock %}
