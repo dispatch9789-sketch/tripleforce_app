@@ -576,10 +576,19 @@ def get_email_template(template_type):
 
 def send_email(to, subject, body, attachments=None):
     """
-    Send an email using Flask-Mail.
+    Send an email using Flask-Mail with a hard socket timeout so a slow or
+    unresponsive SMTP server cannot hang a Gunicorn worker.
     Returns True on success, False on failure.
+    SMTP/socket/TLS/network errors are logged and never crash the worker.
     In development without mail config, logs but doesn't fail.
     """
+    import socket
+    import smtplib
+    import ssl
+
+    previous_timeout = socket.getdefaulttimeout()
+    mail_timeout = current_app.config.get("MAIL_TIMEOUT", 10)
+
     try:
         from flask_mail import Message
         settings = get_company_settings()
@@ -592,11 +601,30 @@ def send_email(to, subject, body, attachments=None):
         if attachments:
             for filename, content_type, data in attachments:
                 msg.attach(filename, content_type, data)
+
+        # Apply a short default timeout to all socket operations (SMTP
+        # connect, TLS handshake, and send) so a stuck SMTP server cannot
+        # block the Gunicorn worker indefinitely.
+        socket.setdefaulttimeout(float(mail_timeout))
         mail.send(msg)
         return True
+    except (
+        smtplib.SMTPException,
+        socket.timeout,
+        TimeoutError,
+        ssl.SSLError,
+        OSError,
+    ) as e:
+        # Network / SMTP / TLS errors must never crash the worker.
+        current_app.logger.exception(f"Email send failed: {e}")
+        return False
     except Exception as e:
+        # Anything else (e.g. missing mail config in dev) is non-fatal too.
         current_app.logger.info(f"Email send failed (expected in dev): {e}")
         return False
+    finally:
+        # Always restore the previous default socket timeout.
+        socket.setdefaulttimeout(previous_timeout)
 
 
 def render_email_template(template_type, context):
