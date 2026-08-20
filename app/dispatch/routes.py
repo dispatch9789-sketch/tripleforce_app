@@ -133,6 +133,22 @@ def new_delivery():
 def detail(delivery_id):
     delivery = Delivery.query.get_or_404(delivery_id)
     status_form = DeliveryStatusForm()
+
+    # Default the "Update Status" dropdown to the next logical step in the
+    # delivery workflow (DELIVERY_STATUSES order) instead of always
+    # resetting to the first choice ("New Request"). Terminal states
+    # (Completed / Cancelled) keep showing the current status.
+    terminal = ("Completed", "Cancelled")
+    current = delivery.status or "New Request"
+    if current in terminal:
+        next_status = current
+    elif current in DELIVERY_STATUSES:
+        idx = DELIVERY_STATUSES.index(current)
+        next_status = DELIVERY_STATUSES[idx + 1] if idx + 1 < len(DELIVERY_STATUSES) else current
+    else:
+        next_status = current
+    status_form.status.data = next_status
+
     pod_form = ProofOfDeliveryForm()
     coc_form = ChainOfCustodyForm()
 
