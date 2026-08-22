@@ -1,19 +1,32 @@
 #!/usr/bin/env python3
-"""Functional tests for the Outreach Tracker integration (CSRF disabled)."""
+"""Self-contained functional tests for the Outreach Tracker integration.
+
+Uses a throwaway SQLite DB (via TestConfig) so it passes on a fresh checkout
+with no CSV and no prospect data — and proves db.create_all() creates the
+prospects table without running `flask db upgrade` (the Railway path).
+"""
 import os
 import sys
+import tempfile
 from datetime import date, timedelta
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.getcwd())
 
 from app import create_app
+from app.config import Config
 from app.extensions import db
-from app.models import Prospect
+from app.models import User, Prospect
+from sqlalchemy import inspect as sa_inspect
 
-app = create_app()
-app.config["WTF_CSRF_ENABLED"] = False
-app.config["TESTING"] = True
+TEST_DB = "/tmp/test_outreach.db"
+
+
+class TestConfig(Config):
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{TEST_DB}"
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+    DEBUG = False
+
 
 PASS = 0
 FAIL = 0
@@ -30,34 +43,64 @@ def test(name, condition, detail=""):
         results.append(f"  FAIL  {name}  {detail}")
 
 
+# Fresh DB each run
+if os.path.exists(TEST_DB):
+    os.remove(TEST_DB)
+
+app = create_app(TestConfig)
+
 with app.app_context():
     db.create_all()
-    # Clean up any test prospects from prior runs so the suite is re-runnable
-    Prospect.query.filter(Prospect.organization_name == "Test Lab Integration").delete()
+    # Prove create_all built the prospects table (no migration run)
+    test("create_all creates prospects table", sa_inspect(db.engine).has_table("prospects"), "prospects table missing")
+
+    # Synthetic admin + 3 prospects (no dependency on the real CSV / DB)
+    admin = User(email="admin@testcompany.com", role="admin")
+    admin.set_password("TestPass123!")
+    db.session.add(admin)
+    for i, (org, email) in enumerate([
+        ("Acme Labs", "ops@acmelabs.test"),
+        ("Beta Imaging", "info@betaimaging.test"),
+        ("Gamma Pathology", "lab@gammapath.test"),
+    ]):
+        p = Prospect(
+            organization_name=org,
+            organization_type="Laboratory" if i != 1 else "Imaging Center",
+            contact_person=f"Contact {i+1}",
+            email=email,
+            phone=f"973-555-100{i}",
+            outreach_status="Drafted - Pending Approval",
+            vendor_registration_status="Not Started",
+            opportunity_stage="Prospect",
+            dedupe_key=Prospect.build_dedupe_key(org, email, f"973-555-100{i}"),
+        )
+        db.session.add(p)
     db.session.commit()
+
     client = app.test_client()
+    SEED = 3
 
     # ── Auth gate: unauthenticated redirect ──
     r = client.get("/outreach/", follow_redirects=False)
     test("auth gate redirects unauthenticated", r.status_code in (301, 302), f"got {r.status_code}")
 
-    # ── Login as admin ──
+    # ── Login ──
     r = client.post("/auth/login", data={
-        "email": "admin@tripleforcelogistic.com",
-        "password": "ChangeMe123!",
+        "email": "admin@testcompany.com",
+        "password": "TestPass123!",
         "remember": "y",
     }, follow_redirects=False)
     test("admin login", r.status_code in (301, 302), f"got {r.status_code}")
 
     baseline = Prospect.query.filter_by(archived=False).count()
-    test("prospects seeded (13)", baseline == 13, f"got {baseline}")
+    test("synthetic prospects seeded", baseline == SEED, f"got {baseline}")
 
     # ── Dashboard / list ──
     r = client.get("/outreach/")
     test("index loads (dashboard + table)", r.status_code == 200 and b"Outreach Tracker" in r.data and b"Total Prospects" in r.data, f"got {r.status_code}")
-    test("index shows 13 prospects", b"NJ Sharing Network" in r.data, "prospect not in table")
+    test("index shows prospects", b"Acme Labs" in r.data, "prospect not in table")
 
-    # ── Filter by status ──
+    # ── Filter ──
     r = client.get("/outreach/?status=Sent")
     test("filter by status works", r.status_code == 200, f"got {r.status_code}")
 
@@ -79,9 +122,9 @@ with app.app_context():
     }, follow_redirects=False)
     test("add prospect redirects (created)", r.status_code in (301, 302), f"got {r.status_code}")
     test("add prospect persisted", Prospect.query.filter_by(organization_name="Test Lab Integration").count() == 1, "not in db")
-    test("dedupe_key computed", Prospect.query.filter_by(organization_name="Test Lab Integration").first().dedupe_key == "test lab integration|jane@testlab.com", "wrong key")
+    test("dedupe_key computed", Prospect.query.filter_by(organization_name="Test Lab Integration").one().dedupe_key == "test lab integration|jane@testlab.com", "wrong key")
 
-    # ── Add duplicate (graceful, no 500) ──
+    # ── Duplicate (graceful, no 500) ──
     r = client.post("/outreach/new", data={
         "organization_name": "Test Lab Integration",
         "email": "jane@testlab.com",
@@ -110,7 +153,7 @@ with app.app_context():
     # ── Mark sent ──
     r = client.post(f"/outreach/{pid}/mark-sent", follow_redirects=False)
     p = Prospect.query.get(pid)
-    test("mark_sent sets status", p.outreach_status == "Sent" and p.date_contacted == date.today(), f"status={p.outreach_status} date={p.date_contacted}")
+    test("mark_sent sets status + date", p.outreach_status == "Sent" and p.date_contacted == date.today(), f"status={p.outreach_status} date={p.date_contacted}")
 
     # ── Follow-up date ──
     fu = date.today() + timedelta(days=4)
@@ -132,8 +175,8 @@ with app.app_context():
     test("status update saved", p.outreach_status == "Responded" and p.opportunity_stage == "Vendor Registration" and p.vendor_registration_status == "Started" and p.response_status == "Requested vendor portal", f"status={p.outreach_status} stage={p.opportunity_stage} vr={p.vendor_registration_status}")
 
     # ── Notes (append) ──
-    r = client.post(f"/outreach/{pid}/notes", data={"notes": "First note from test"}, follow_redirects=False)
-    r2 = client.post(f"/outreach/{pid}/notes", data={"notes": "Second note from test"}, follow_redirects=False)
+    client.post(f"/outreach/{pid}/notes", data={"notes": "First note from test"})
+    client.post(f"/outreach/{pid}/notes", data={"notes": "Second note from test"})
     p = Prospect.query.get(pid)
     test("notes appended in order", "First note from test" in p.notes and "Second note from test" in p.notes and p.notes.index("First") < p.notes.index("Second"), f"notes={p.notes!r}")
 
@@ -141,9 +184,9 @@ with app.app_context():
     r = client.post(f"/outreach/{pid}/delete", follow_redirects=False)
     p = Prospect.query.get(pid)
     test("archive sets archived=True", p.archived is True, f"archived={p.archived}")
-    test("archived hidden from default list", Prospect.query.filter_by(archived=False).count() == baseline, "count changed")
+    test("archived hidden from default list", Prospect.query.filter_by(archived=False).count() == SEED, "count changed")
 
-    # ── CSV import route (idempotent, dedup) ──
+    # ── CSV import route (idempotent, dedup) — self-contained temp CSV ──
     import csv as _csv, io as _io, tempfile as _tf
     existing = Prospect.query.filter_by(archived=False).first()
     buf = _io.StringIO()
@@ -158,7 +201,7 @@ with app.app_context():
     test("import did not duplicate", Prospect.query.filter_by(organization_name=existing.organization_name).count() == 1, "dup created")
     os.remove(tmp.name)
 
-    # ── Persistence after "refresh" (re-query) ──
+    # ── Persistence after "refresh" ──
     p = Prospect.query.get(pid)
     test("persistence after refresh", p.outreach_status == "Responded" and p.vendor_registration_status == "Started" and "First note from test" in p.notes, "state not persisted")
 
