@@ -1,6 +1,6 @@
 """Flask-WTF forms for all modules."""
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import (
     StringField, TextAreaField, PasswordField, BooleanField,
     SelectField, FloatField, IntegerField, DateField, DateTimeField,
@@ -388,4 +388,52 @@ class DriverPODForm(FlaskForm):
     refused = BooleanField("Delivery Refused")
     refusal_reason = TextAreaField("Refusal Reason")
     submit = SubmitField("Submit Proof of Delivery")
+
+
+# ═══════════════════════════════════════════════════════════════
+#  OUTREACH TRACKER FORMS
+# ═══════════════════════════════════════════════════════════════
+class ProspectForm(FlaskForm):
+    organization_name = StringField("Organization / Prospect Name", validators=[DataRequired(), Length(max=255)])
+    organization_type = StringField("Organization Type", validators=[Optional(), Length(max=100)])
+    contact_person = StringField("Contact Person", validators=[Optional(), Length(max=200)])
+    contact_title = StringField("Contact Title / Department", validators=[Optional(), Length(max=200)])
+    email = StringField("Email", validators=[Optional(), Email(), Length(max=255)])
+    phone = StringField("Phone", validators=[Optional(), Length(max=50)])
+    website = StringField("Website", validators=[Optional(), Length(max=255)])
+    procurement_vendor_route = StringField("Procurement / Vendor Route", validators=[Optional(), Length(max=255)])
+    outreach_subject = StringField("Outreach Subject", validators=[Optional(), Length(max=255)])
+    outreach_status = SelectField("Outreach Status", choices=[], validators=[DataRequired()])
+    date_contacted = DateField("Date Contacted", validators=[Optional()])
+    follow_up_date = DateField("Follow-Up Date", validators=[Optional()])
+    response_status = StringField("Response Summary", validators=[Optional(), Length(max=100)])
+    vendor_application_date = DateField("Vendor Application Date", validators=[Optional()])
+    vendor_registration_status = SelectField("Vendor Registration Status", choices=[], validators=[DataRequired()])
+    opportunity_stage = SelectField("Opportunity Stage", choices=[], validators=[DataRequired()])
+    notes = TextAreaField("Notes", validators=[Optional()])
+    submit = SubmitField("Save Prospect")
+
+
+class ProspectStatusForm(FlaskForm):
+    outreach_status = SelectField("Outreach Status", choices=[], validators=[DataRequired()])
+    opportunity_stage = SelectField("Opportunity Stage", choices=[], validators=[DataRequired()])
+    vendor_registration_status = SelectField("Vendor Registration Status", choices=[], validators=[DataRequired()])
+    response_status = StringField("Response Summary", validators=[Optional(), Length(max=100)])
+    submit = SubmitField("Update Status")
+
+
+class ProspectNotesForm(FlaskForm):
+    notes = TextAreaField("Notes", validators=[Optional()])
+    submit = SubmitField("Save Notes")
+
+
+class ProspectFollowUpForm(FlaskForm):
+    follow_up_date = DateField("Follow-Up Date", validators=[DataRequired()])
+    outreach_status = SelectField("Outreach Status", choices=[], validators=[DataRequired()])
+    submit = SubmitField("Save Follow-Up")
+
+
+class ProspectImportForm(FlaskForm):
+    csv_file = FileField("CSV file", validators=[FileRequired(), FileAllowed(["csv"], "CSV files only")])
+    submit = SubmitField("Import")
 

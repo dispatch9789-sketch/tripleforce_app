@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Outreach Tracker — Triple Force Logistic{% endblock %}
+{% block content %}
+<h1 class="page-title">Outreach Tracker</h1>
+<p class="page-subtitle">B2B prospect pipeline &amp; follow-ups — saved to the database</p>
+
+<!-- ── Dashboard summary (live from DB) ── -->
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Total Prospects</div>
+            <div class="fs-4 fw-bold">{{ counts.total }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Not Contacted</div>
+            <div class="fs-4 fw-bold text-secondary">{{ counts.not_contacted }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Contacted</div>
+            <div class="fs-4 fw-bold">{{ counts.contacted }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Follow-Ups Due</div>
+            <div class="fs-4 fw-bold text-warning">{{ counts.follow_ups_due }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Responses</div>
+            <div class="fs-4 fw-bold text-info">{{ counts.responses }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Vendor Applications</div>
+            <div class="fs-4 fw-bold">{{ counts.vendor_applications }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Approved Vendors</div>
+            <div class="fs-4 fw-bold text-success">{{ counts.approved_vendors }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Contract Opportunities</div>
+            <div class="fs-4 fw-bold text-primary">{{ counts.contract_opportunities }}</div>
+        </div></div>
+    </div>
+</div>
+
+<!-- ── Filter Bar ── -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('outreach.index') }}" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" value="{{ search or '' }}" class="form-control" placeholder="Organization, contact, email…">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Outreach Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    {% for s in outreach_statuses %}
+                        <option value="{{ s }}" {{ 'selected' if status == s else '' }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Opportunity Stage</label>
+                <select name="stage" class="form-select">
+                    <option value="">All</option>
+                    {% for s in opportunity_stages %}
+                        <option value="{{ s }}" {{ 'selected' if stage == s else '' }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-grid gap-2">
+                <button type="submit" class="btn btn-tf-primary"><i class="bi bi-funnel"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Action Bar ── -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <span class="text-muted">{{ prospects|length }} prospect(s){% if show_archived %} (incl. archived){% endif %}</span>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('outreach.import_csv') }}" class="btn btn-outline-secondary"><i class="bi bi-upload"></i> Import CSV</a>
+        <a href="{{ url_for('outreach.new') }}" class="btn btn-tf-amber"><i class="bi bi-person-plus"></i> Add Prospect</a>
+    </div>
+</div>
+
+<!-- ── Prospects table ── -->
+<div class="card">
+    <div class="card-body p-0">
+        <!-- Desktop table -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Organization</th>
+                        <th class="d-none d-md-table-cell">Type</th>
+                        <th>Contact</th>
+                        <th>Status</th>
+                        <th class="d-none d-lg-table-cell">Stage</th>
+                        <th class="d-none d-lg-table-cell">Follow-Up</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in prospects %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('outreach.view', prospect_id=p.id) }}" class="fw-semibold text-decoration-none">{{ p.organization_name }}</a>
+                            {% if p.archived %}<span class="badge bg-secondary ms-1">archived</span>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell"><span class="small text-muted">{{ p.organization_type or '—' }}</span></td>
+                        <td>
+                            {% if p.contact_person %}{{ p.contact_person }}{% else %}<span class="text-muted">—</span>{% endif %}
+                            {% if p.email %}<div class="small text-muted d-none d-md-block">{{ p.email }}</div>{% endif %}
+                        </td>
+                        <td>
+                            {% set badge = {'Drafted - Pending Approval':'bg-secondary','Ready to Send':'bg-info','Sent':'bg-primary','Follow-Up Needed':'bg-warning text-dark','Responded':'bg-success','Closed':'bg-dark'} %}
+                            <span class="badge {{ badge.get(p.outreach_status, 'bg-secondary') }}">{{ p.outreach_status }}</span>
+                        </td>
+                        <td class="d-none d-lg-table-cell"><span class="small">{{ p.opportunity_stage }}</span></td>
+                        <td class="d-none d-lg-table-cell">
+                            {% if p.follow_up_date %}
+                                <span class="small {% if p.follow_up_date <= today %}text-danger fw-semibold{% endif %}">{{ p.follow_up_date|datetime }}</span>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('outreach.view', prospect_id=p.id) }}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+                                <a href="{{ url_for('outreach.edit', prospect_id=p.id) }}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No prospects yet. <a href="{{ url_for('outreach.new') }}">Add one</a> or import the CSV.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Mobile cards -->
+        <div class="d-md-none">
+            {% for p in prospects %}
+            <div class="card card-body mb-2 p-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="me-2">
+                        <a href="{{ url_for('outreach.view', prospect_id=p.id) }}" class="fw-semibold text-decoration-none">{{ p.organization_name }}</a>
+                        {% if p.archived %}<span class="badge bg-secondary ms-1">archived</span>{% endif %}
+                        <div class="small text-muted">{{ p.contact_person or p.email or '—' }}</div>
+                    </div>
+                    {% set badge = {'Drafted - Pending Approval':'bg-secondary','Ready to Send':'bg-info','Sent':'bg-primary','Follow-Up Needed':'bg-warning text-dark','Responded':'bg-success','Closed':'bg-dark'} %}
+                    <span class="badge {{ badge.get(p.outreach_status, 'bg-secondary') }} text-wrap">{{ p.outreach_status }}</span>
+                </div>
+                <div class="mt-2 d-flex justify-content-end">
+                    <a href="{{ url_for('outreach.view', prospect_id=p.id) }}" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-eye"></i> View</a>
+                    <a href="{{ url_for('outreach.edit', prospect_id=p.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">No prospects yet. <a href="{{ url_for('outreach.new') }}">Add one</a> or import the CSV.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

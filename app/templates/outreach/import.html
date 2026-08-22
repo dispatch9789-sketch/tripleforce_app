@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Import Prospects — Outreach Tracker{% endblock %}
+{% block content %}
+<h1 class="page-title">Import Prospects</h1>
+<p class="page-subtitle">Import from a CSV file — duplicates are skipped, existing records are preserved</p>
+
+<form method="POST" enctype="multipart/form-data" action="" class="card">
+    <div class="card-body">
+        {{ form.hidden_tag() }}
+        <label class="form-label">{{ form.csv_file.label.text }}</label>
+        {{ form.csv_file(class="form-control") }}
+        {% for e in form.csv_file.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        <div class="form-text">CSV must include an <strong>Organization</strong> column. Mapped columns: Organization, Facility Type, Website, Verified Contact, Contact Title/Department, Email, Phone, Vendor/Procurement Portal, Status, Date Contacted, Subject, Follow-up 1 Date, Response Summary, Vendor App Submitted Date, Opportunity Stage, Notes. Extra columns are folded into Notes.</div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a href="{{ url_for('outreach.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-tf-primary"><i class="bi bi-upload"></i> {{ form.submit.label.text }}</button>
+    </div>
+</form>
+{% endblock %}

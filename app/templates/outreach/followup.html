@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Follow-Up — {{ prospect.organization_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Follow-Up</h1>
+<p class="page-subtitle">{{ prospect.organization_name }}</p>
+
+<form method="POST" action="" class="card">
+    <div class="card-body">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">{{ form.follow_up_date.label.text }} <span class="text-danger">*</span></label>
+                {{ form.follow_up_date(class="form-control") }}
+                {% for e in form.follow_up_date.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.outreach_status.label.text }}</label>
+                {{ form.outreach_status(class="form-select") }}
+            </div>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a href="{{ url_for('outreach.view', prospect_id=prospect.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-tf-primary"><i class="bi bi-check-lg"></i> {{ form.submit.label.text }}</button>
+    </div>
+</form>
+{% endblock %}

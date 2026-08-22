@@ -644,3 +644,90 @@ class UploadedDocument(db.Model):
     original_filename = db.Column(db.String(255))
     document_type = db.Column(db.String(50))  # contract, pod_photo, signature, other
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  OUTREACH TRACKER — B2B prospect & follow-up pipeline
+# ═══════════════════════════════════════════════════════════════
+
+OUTREACH_STATUSES = [
+    "Drafted - Pending Approval",
+    "Ready to Send",
+    "Sent",
+    "Follow-Up Needed",
+    "Responded",
+    "Closed",
+]
+
+OPPORTUNITY_STAGES = [
+    "Prospect",
+    "Contacted",
+    "Follow-Up",
+    "Vendor Registration",
+    "Application Submitted",
+    "Under Review",
+    "Approved Vendor",
+    "Contract Opportunity",
+    "Won",
+    "Not Interested",
+]
+
+VENDOR_REGISTRATION_STATUSES = [
+    "Not Started",
+    "Started",
+    "Application Submitted",
+    "Under Review",
+    "Approved",
+    "Rejected",
+]
+
+
+class Prospect(db.Model):
+    """A B2B outreach prospect (lab, imaging center, ASC, dialysis, etc.).
+
+    The database is the single source of truth -- every action in the Outreach
+    Tracker (add, edit, mark-sent, follow-up, response, vendor status, stage,
+    notes, archive) writes a committed row here. ``dedupe_key`` prevents
+    duplicate prospects (org + email, falling back to org + phone, org + website,
+    org alone) so re-importing the CSV never creates duplicates.
+    """
+
+    __tablename__ = "prospects"
+
+    id = db.Column(db.Integer, primary_key=True)
+    organization_name = db.Column(db.String(255), nullable=False, index=True)
+    organization_type = db.Column(db.String(100))  # Laboratory, Imaging, ASC, Dialysis, etc.
+    contact_person = db.Column(db.String(200))
+    contact_title = db.Column(db.String(200))
+    email = db.Column(db.String(255))
+    phone = db.Column(db.String(50))
+    website = db.Column(db.String(255))
+    procurement_vendor_route = db.Column(db.String(255))  # vendor portal / procurement channel
+    outreach_subject = db.Column(db.String(255))
+    outreach_status = db.Column(db.String(50), default="Drafted - Pending Approval", index=True)
+    date_contacted = db.Column(db.Date)
+    follow_up_date = db.Column(db.Date, index=True)
+    response_status = db.Column(db.String(100))
+    vendor_application_date = db.Column(db.Date)
+    vendor_registration_status = db.Column(db.String(50), default="Not Started")
+    opportunity_stage = db.Column(db.String(50), default="Prospect", index=True)
+    notes = db.Column(db.Text)
+    dedupe_key = db.Column(db.String(255), unique=True, index=True)
+    archived = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @staticmethod
+    def build_dedupe_key(organization_name, email="", phone="", website=""):
+        """Stable duplicate-detection key (org + email -> org + phone -> org + website -> org)."""
+        org = (organization_name or "").strip().lower()
+        email = (email or "").strip().lower()
+        phone = (phone or "").strip().lower()
+        website = (website or "").strip().lower()
+        if org and email:
+            return f"{org}|{email}"
+        if org and phone:
+            return f"{org}|{phone}"
+        if org and website:
+            return f"{org}|{website}"
+        return org or None

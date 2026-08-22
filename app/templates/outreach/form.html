@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Outreach Tracker{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<p class="page-subtitle">All changes save permanently to the database</p>
+
+<form method="POST" action="" class="card">
+    <div class="card-body">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">{{ form.organization_name.label.text }} <span class="text-danger">*</span></label>
+                {{ form.organization_name(class="form-control") }}
+                {% for e in form.organization_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.organization_type.label.text }}</label>
+                {{ form.organization_type(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.contact_person.label.text }}</label>
+                {{ form.contact_person(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.contact_title.label.text }}</label>
+                {{ form.contact_title(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.email.label.text }}</label>
+                {{ form.email(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.phone.label.text }}</label>
+                {{ form.phone(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.website.label.text }}</label>
+                {{ form.website(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.procurement_vendor_route.label.text }}</label>
+                {{ form.procurement_vendor_route(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.outreach_subject.label.text }}</label>
+                {{ form.outreach_subject(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.outreach_status.label.text }}</label>
+                {{ form.outreach_status(class="form-select") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.date_contacted.label.text }}</label>
+                {{ form.date_contacted(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.follow_up_date.label.text }}</label>
+                {{ form.follow_up_date(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{{ form.vendor_application_date.label.text }}</label>
+                {{ form.vendor_application_date(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.vendor_registration_status.label.text }}</label>
+                {{ form.vendor_registration_status(class="form-select") }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.opportunity_stage.label.text }}</label>
+                {{ form.opportunity_stage(class="form-select") }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">{{ form.response_status.label.text }}</label>
+                {{ form.response_status(class="form-control") }}
+            </div>
+            <div class="col-12">
+                <label class="form-label">{{ form.notes.label.text }}</label>
+                {{ form.notes(class="form-control", rows="4") }}
+            </div>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a href="{{ url_for('outreach.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-tf-primary"><i class="bi bi-check-lg"></i> {{ form.submit.label.text }}</button>
+    </div>
+</form>
+{% endblock %}

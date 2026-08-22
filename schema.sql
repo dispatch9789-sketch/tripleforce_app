@@ -498,3 +498,41 @@ CREATE TABLE payments (
 
 ;
 
+-- Table: prospects (Outreach Tracker)
+DROP TABLE IF EXISTS prospects;
+
+CREATE TABLE prospects (
+	id INTEGER NOT NULL, 
+	organization_name VARCHAR(255) NOT NULL, 
+	organization_type VARCHAR(100), 
+	contact_person VARCHAR(200), 
+	contact_title VARCHAR(200), 
+	email VARCHAR(255), 
+	phone VARCHAR(50), 
+	website VARCHAR(255), 
+	procurement_vendor_route VARCHAR(255), 
+	outreach_subject VARCHAR(255), 
+	outreach_status VARCHAR(50), 
+	date_contacted DATE, 
+	follow_up_date DATE, 
+	response_status VARCHAR(100), 
+	vendor_application_date DATE, 
+	vendor_registration_status VARCHAR(50), 
+	opportunity_stage VARCHAR(50), 
+	notes TEXT, 
+	dedupe_key VARCHAR(255), 
+	archived BOOLEAN, 
+	created_at DATETIME, 
+	updated_at DATETIME, 
+	PRIMARY KEY (id)
+)
+
+;
+
+CREATE INDEX ix_prospects_organization_name ON prospects (organization_name);
+CREATE INDEX ix_prospects_outreach_status ON prospects (outreach_status);
+CREATE INDEX ix_prospects_follow_up_date ON prospects (follow_up_date);
+CREATE INDEX ix_prospects_opportunity_stage ON prospects (opportunity_stage);
+CREATE INDEX ix_prospects_archived ON prospects (archived);
+CREATE UNIQUE INDEX ix_prospects_dedupe_key ON prospects (dedupe_key);
+

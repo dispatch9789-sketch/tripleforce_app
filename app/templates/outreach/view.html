@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ prospect.organization_name }} — Outreach Tracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="page-title mb-0">{{ prospect.organization_name }}</h1>
+        <p class="page-subtitle mb-0">{{ prospect.organization_type or 'Prospect' }}{% if prospect.contact_person %} · {{ prospect.contact_person }}{% if prospect.contact_title %} ({{ prospect.contact_title }}){% endif %}{% endif %}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('outreach.edit', prospect_id=prospect.id) }}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+        <a href="{{ url_for('outreach.delete', prospect_id=prospect.id) }}" class="btn btn-outline-danger"><i class="bi bi-archive"></i> Archive</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- ── Status card ── -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><strong>Outreach Status</strong></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Status</span>
+                    {% set badge = {'Drafted - Pending Approval':'bg-secondary','Ready to Send':'bg-info','Sent':'bg-primary','Follow-Up Needed':'bg-warning text-dark','Responded':'bg-success','Closed':'bg-dark'} %}
+                    <span class="badge {{ badge.get(prospect.outreach_status, 'bg-secondary') }}">{{ prospect.outreach_status }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Opportunity Stage</span><span class="fw-semibold">{{ prospect.opportunity_stage }}</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Vendor Registration</span><span class="fw-semibold">{{ prospect.vendor_registration_status }}</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Date Contacted</span><span>{{ prospect.date_contacted|datetime if prospect.date_contacted else '—' }}</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Follow-Up Date</span><span class="{% if prospect.follow_up_date and prospect.follow_up_date <= today %}text-danger fw-semibold{% endif %}">{{ prospect.follow_up_date|datetime if prospect.follow_up_date else '—' }}</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Vendor App Date</span><span>{{ prospect.vendor_application_date|datetime if prospect.vendor_application_date else '—' }}</span></div>
+                <div class="d-flex justify-content-between"><span class="text-muted">Response</span><span>{% if prospect.response_status %}{{ prospect.response_status }}{% else %}—{% endif %}</span></div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-3">
+            <form method="POST" action="{{ url_for('outreach.mark_sent', prospect_id=prospect.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-tf-primary w-100"><i class="bi bi-send"></i> Mark Outreach as Sent</button>
+            </form>
+            <div class="btn-group">
+                <a href="{{ url_for('outreach.followup', prospect_id=prospect.id) }}" class="btn btn-outline-secondary"><i class="bi bi-calendar-event"></i> Follow-Up</a>
+                <a href="{{ url_for('outreach.status', prospect_id=prospect.id) }}" class="btn btn-outline-secondary"><i class="bi bi-flag"></i> Status</a>
+                <a href="{{ url_for('outreach.notes', prospect_id=prospect.id) }}" class="btn btn-outline-secondary"><i class="bi bi-journal-text"></i> Notes</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Contact + notes ── -->
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header"><strong>Contact &amp; Procurement</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Contact Person</dt><dd class="col-sm-8">{{ prospect.contact_person or '—' }}</dd>
+                    <dt class="col-sm-4">Title / Dept</dt><dd class="col-sm-8">{{ prospect.contact_title or '—' }}</dd>
+                    <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{% if prospect.email %}<a href="mailto:{{ prospect.email }}">{{ prospect.email }}</a>{% else %}—{% endif %}</dd>
+                    <dt class="col-sm-4">Phone</dt><dd class="col-sm-8">{{ prospect.phone or '—' }}</dd>
+                    <dt class="col-sm-4">Website</dt><dd class="col-sm-8">{% if prospect.website %}<a href="{{ prospect.website }}" target="_blank" rel="noopener">{{ prospect.website }}</a>{% else %}—{% endif %}</dd>
+                    <dt class="col-sm-4">Vendor Route</dt><dd class="col-sm-8">{{ prospect.procurement_vendor_route or '—' }}</dd>
+                    <dt class="col-sm-4">Outreach Subject</dt><dd class="col-sm-8">{{ prospect.outreach_subject or '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center"><strong>Notes</strong><a href="{{ url_for('outreach.notes', prospect_id=prospect.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-plus-lg"></i> Add</a></div>
+            <div class="card-body">
+                {% if prospect.notes %}
+                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.9rem;">{{ prospect.notes }}</pre>
+                {% else %}<span class="text-muted">No notes yet.</span>{% endif %}
+            </div>
+        </div>
+
+        <div class="text-muted small mt-2">Created {{ prospect.created_at|datetime }} · Updated {{ prospect.updated_at|datetime }}</div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Add Note — {{ prospect.organization_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Add Note</h1>
+<p class="page-subtitle">{{ prospect.organization_name }} — new notes are timestamped and appended to existing notes</p>
+
+<form method="POST" action="" class="card">
+    <div class="card-body">
+        {{ form.hidden_tag() }}
+        <label class="form-label">{{ form.notes.label.text }}</label>
+        {{ form.notes(class="form-control", rows="6", placeholder="Type a new note…") }}
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a href="{{ url_for('outreach.view', prospect_id=prospect.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-tf-primary"><i class="bi bi-check-lg"></i> {{ form.submit.label.text }}</button>
+    </div>
+</form>
+{% endblock %}
