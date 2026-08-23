@@ -143,7 +143,15 @@ def main():
                 failures.append("status_history notes does not mention public website")
 
     # ── 4. Internal routes still protected (redirect to login) when logged out ──
-    for path in ["/", "/dashboard", "/customers/", "/dispatch/", "/invoices/", "/quotes/", "/reports/"]:
+    # NOTE: the site root "/" is the customer entry point -> redirects to /request-pickup
+    # (NOT /auth/login) for logged-out visitors. All other staff routes redirect to /auth/login.
+    r = client.get("/")
+    loc = r.headers.get("Location", "")
+    ok = r.status_code in (301, 302) and "/request-pickup" in loc
+    print(f"[GET /] status={r.status_code} -> {loc}  customer_entry={ok}")
+    if not ok:
+        failures.append(f"/ should redirect logged-out customers to /request-pickup; got {r.status_code} loc={loc}")
+    for path in ["/dashboard", "/customers/", "/dispatch/", "/invoices/", "/quotes/", "/reports/"]:
         r = client.get(path)
         loc = r.headers.get("Location", "")
         ok = r.status_code in (301, 302) and "/auth/login" in loc
