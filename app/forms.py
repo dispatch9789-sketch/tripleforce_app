@@ -155,6 +155,45 @@ class DeliveryForm(FlaskForm):
     submit = SubmitField("Save Delivery")
 
 
+# ═══════════════════════════════════════════════════════════════
+#  PUBLIC CUSTOMER PICKUP REQUEST
+#  (Customer-facing form shown on the public /request-pickup page.
+#   Contains ONLY customer-visible fields — no driver/internal/staff
+#   fields. Writes to the same Delivery model as the staff form.)
+# ═══════════════════════════════════════════════════════════════
+class CustomerPickupRequestForm(FlaskForm):
+    # Who is requesting the pickup
+    requester_name = StringField("Your Name", validators=[DataRequired(), Length(max=200)])
+    requester_phone = StringField("Your Phone", validators=[DataRequired(), Length(max=50)])
+    requester_email = StringField("Your Email", validators=[Optional(), Email(), Length(max=200)])
+
+    # Pickup details
+    pickup_contact = StringField("Pickup Contact Name", validators=[Optional(), Length(max=200)])
+    pickup_address = StringField("Pickup Address", validators=[DataRequired(), Length(max=500)])
+    pickup_instructions = TextAreaField("Pickup Instructions", validators=[Optional(), Length(max=2000)])
+    pickup_datetime = DateTimeField("Requested Pickup Date & Time", format="%Y-%m-%dT%H:%M", validators=[Optional()])
+
+    # Delivery details
+    delivery_contact = StringField("Delivery Contact Name", validators=[Optional(), Length(max=200)])
+    delivery_address = StringField("Delivery Address", validators=[DataRequired(), Length(max=500)])
+    delivery_instructions = TextAreaField("Delivery Instructions", validators=[Optional(), Length(max=2000)])
+
+    # Service details
+    service_type = SelectField("Service Type", choices=[(s, s) for s in SERVICE_TYPES], default="Standard")
+    package_type = StringField("Package Type", validators=[Optional(), Length(max=100)])
+    quantity = IntegerField("Quantity", default=1, validators=[Optional(), NumberRange(min=1)])
+    special_handling = TextAreaField("Special Handling Instructions", validators=[Optional(), Length(max=2000)])
+
+    # Medical courier options
+    is_medical = BooleanField("This is a medical courier delivery")
+    pickup_facility = StringField("Pickup Facility", validators=[Optional(), Length(max=255)])
+    delivery_facility = StringField("Delivery Facility", validators=[Optional(), Length(max=255)])
+    temperature_requirement = StringField("Temperature Requirement", validators=[Optional(), Length(max=100)])
+
+    customer_notes = TextAreaField("Additional Notes", validators=[Optional(), Length(max=2000)])
+    submit = SubmitField("Request Pickup")
+
+
 class DeliveryStatusForm(FlaskForm):
     status = SelectField("Update Status", choices=[(s, s) for s in [
         "New Request", "Quote Pending", "Confirmed", "Scheduled",

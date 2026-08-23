@@ -1,0 +1,147 @@
+{% extends "public_base.html" %}
+
+{% block title %}Request a Pickup — {{ company_name }}{% endblock %}
+
+{% block content %}
+
+{% if submitted and order_number %}
+{# ── Success state: show confirmation, keep NO internal navigation ── #}
+<div class="public-card text-center">
+    <div class="public-success-icon"><i class="bi bi-check-lg"></i></div>
+    <h1 class="public-card-title">Pickup Request Received</h1>
+    <p class="public-card-subtitle">Thank you — your request has been submitted successfully.</p>
+
+    <p class="mb-1">Your order number is</p>
+    <div class="public-order-number mb-3">{{ order_number }}</div>
+
+    <p class="text-muted mb-4">Keep this number handy. Our team will contact you shortly to confirm your pickup time and details.</p>
+
+    <a href="{{ url_for('public.request_pickup') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-plus-lg"></i> Submit Another Request
+    </a>
+</div>
+{% else %}
+{# ── Pickup request form: customer-facing only, no staff/internal fields ── #}
+<div class="public-card">
+    <h1 class="public-card-title">Request a Pickup</h1>
+    <p class="public-card-subtitle">Tell us about your shipment and we'll handle the rest.</p>
+
+    <form method="POST" action="{{ url_for('public.request_pickup') }}" class="public-form" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="public-section-label"><i class="bi bi-person-lines-fill"></i> Your Contact Information</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                {{ form.requester_name.label(class="form-label") }}
+                {{ form.requester_name(class="form-control", placeholder="First and last name") }}
+                {% for e in form.requester_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                {{ form.requester_phone.label(class="form-label") }}
+                {{ form.requester_phone(class="form-control", placeholder="(555) 123-4567") }}
+                {% for e in form.requester_phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                {{ form.requester_email.label(class="form-label") }}
+                {{ form.requester_email(class="form-control", placeholder="you@email.com") }}
+                {% for e in form.requester_email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-geo-alt-fill"></i> Pickup Details</div>
+        <div class="row g-3">
+            <div class="col-md-8">
+                {{ form.pickup_address.label(class="form-label") }}
+                {{ form.pickup_address(class="form-control", placeholder="Street address, city, state, ZIP") }}
+                {% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+                {{ form.pickup_datetime.label(class="form-label") }}
+                {{ form.pickup_datetime(class="form-control") }}
+                {% for e in form.pickup_datetime.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                {{ form.pickup_contact.label(class="form-label") }}
+                {{ form.pickup_contact(class="form-control", placeholder="Person at pickup location (if different)") }}
+            </div>
+            <div class="col-12">
+                {{ form.pickup_instructions.label(class="form-label") }}
+                {{ form.pickup_instructions(class="form-control", placeholder="Gate codes, parking, building, etc.") }}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-flag-fill"></i> Delivery Details</div>
+        <div class="row g-3">
+            <div class="col-md-8">
+                {{ form.delivery_address.label(class="form-label") }}
+                {{ form.delivery_address(class="form-control", placeholder="Street address, city, state, ZIP") }}
+                {% for e in form.delivery_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+                {{ form.delivery_contact.label(class="form-label") }}
+                {{ form.delivery_contact(class="form-control", placeholder="Recipient name") }}
+            </div>
+            <div class="col-12">
+                {{ form.delivery_instructions.label(class="form-label") }}
+                {{ form.delivery_instructions(class="form-control", placeholder="Drop-off notes, access, contact info") }}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-box-seam-fill"></i> Shipment Details</div>
+        <div class="row g-3">
+            <div class="col-md-5">
+                {{ form.service_type.label(class="form-label") }}
+                {{ form.service_type(class="form-select") }}
+            </div>
+            <div class="col-md-4">
+                {{ form.package_type.label(class="form-label") }}
+                {{ form.package_type(class="form-control", placeholder="e.g. Envelope, Box, Pallet") }}
+            </div>
+            <div class="col-md-3">
+                {{ form.quantity.label(class="form-label") }}
+                {{ form.quantity(class="form-control") }}
+                {% for e in form.quantity.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+                {{ form.special_handling.label(class="form-label") }}
+                {{ form.special_handling(class="form-control", placeholder="Fragile, refrigerated, oversized, etc.") }}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-heart-pulse-fill"></i> Medical Courier</div>
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-check">
+                    {{ form.is_medical(class="form-check-input") }}
+                    {{ form.is_medical.label(class="form-check-label") }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                {{ form.pickup_facility.label(class="form-label") }}
+                {{ form.pickup_facility(class="form-control", placeholder="Pickup facility / lab") }}
+            </div>
+            <div class="col-md-6">
+                {{ form.delivery_facility.label(class="form-label") }}
+                {{ form.delivery_facility(class="form-control", placeholder="Delivery facility / lab") }}
+            </div>
+            <div class="col-md-6">
+                {{ form.temperature_requirement.label(class="form-label") }}
+                {{ form.temperature_requirement(class="form-control", placeholder="e.g. Refrigerated 2-8°C") }}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-chat-left-text-fill"></i> Additional Notes</div>
+        <div class="row g-3">
+            <div class="col-12">
+                {{ form.customer_notes(class="form-control", rows=3, placeholder="Anything else we should know?") }}
+            </div>
+        </div>
+
+        <div class="d-grid mt-4">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+        </div>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -44,6 +44,7 @@ def create_app(config_class=Config):
     from app.users.routes import users
     from app.driver_portal.routes import driver_portal
     from app.outreach.routes import outreach, register_cli as register_outreach_cli
+    from app.public_request.routes import public
 
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(main)
@@ -56,6 +57,7 @@ def create_app(config_class=Config):
     app.register_blueprint(users, url_prefix="/users")
     app.register_blueprint(driver_portal, url_prefix="/driver")
     app.register_blueprint(outreach, url_prefix="/outreach")
+    app.register_blueprint(public)  # public customer-facing pages (/request-pickup)
 
     # ── Outreach Tracker CLI (flask outreach-import <path>) ──
     register_outreach_cli(app)
