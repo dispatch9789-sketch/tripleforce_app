@@ -142,15 +142,21 @@ def main():
             elif "public website" not in (hist[0].notes or ""):
                 failures.append("status_history notes does not mention public website")
 
-    # ── 4. Internal routes still protected (redirect to login) when logged out ──
-    # NOTE: the site root "/" is the customer entry point -> redirects to /request-pickup
-    # (NOT /auth/login) for logged-out visitors. All other staff routes redirect to /auth/login.
+    # ── 4. Root "/" is the public gateway (landing page), and staff routes
+    #    require login when logged out. ──
     r = client.get("/")
-    loc = r.headers.get("Location", "")
-    ok = r.status_code in (301, 302) and "/request-pickup" in loc
-    print(f"[GET /] status={r.status_code} -> {loc}  customer_entry={ok}")
-    if not ok:
-        failures.append(f"/ should redirect logged-out customers to /request-pickup; got {r.status_code} loc={loc}")
+    body_root = r.get_data(as_text=True)
+    print(f"[GET /] status={r.status_code}")
+    if r.status_code != 200:
+        failures.append(f"/ should return 200 landing page; got {r.status_code}")
+    if "Request a Pickup" not in body_root:
+        failures.append("Landing page missing 'Request a Pickup' button")
+    if "/request-pickup" not in body_root:
+        failures.append("Landing page missing link to /request-pickup")
+    if "/auth/login" not in body_root:
+        failures.append("Landing page missing Staff Login link to /auth/login")
+    if "sidebar-link" in body_root or 'class="sidebar"' in body_root:
+        failures.append("Landing page exposed sidebar/internal nav")
     for path in ["/dashboard", "/customers/", "/dispatch/", "/invoices/", "/quotes/", "/reports/"]:
         r = client.get(path)
         loc = r.headers.get("Location", "")

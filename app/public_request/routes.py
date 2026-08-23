@@ -15,6 +15,19 @@ from app.utils import get_next_order_number, get_company_settings
 public = Blueprint("public", __name__)
 
 
+@public.route("/")
+def home():
+    """Public branded gateway at the site root.
+
+    This is the single entry point for web traffic. It is NOT the staff
+    dashboard and is NOT the pickup form — it links to both. No login
+    required, no sidebar, no internal navigation.
+    """
+    settings = get_company_settings()
+    company_name = settings.company_name if settings else "Triple Force Logistic LLC"
+    return render_template("public/home.html", company_name=company_name)
+
+
 @public.route("/request-pickup", methods=["GET", "POST"])
 def request_pickup():
     """Public page where customers request a pickup.

@@ -25,8 +25,9 @@ main = Blueprint("main", __name__)
 
 # ═══════════════════════════════════════════════════════════════
 #  DASHBOARD
+#  NOTE: the site root "/" is the public customer gateway (see the
+#  `public` blueprint). The staff dashboard lives at /dashboard.
 # ═══════════════════════════════════════════════════════════════
-@main.route("/")
 @main.route("/dashboard")
 @login_required
 @dispatcher_or_above

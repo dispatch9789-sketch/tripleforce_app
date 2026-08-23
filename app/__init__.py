@@ -80,18 +80,6 @@ def create_app(config_class=Config):
     with app.app_context():
         db.create_all()
 
-    # ── Public entry point: logged-out visitors to the site root are
-    #    customers, not staff. Send them to the customer pickup form
-    #    instead of the staff login screen. Authenticated staff still
-    #    get the dashboard. No staff route auth is affected by this. ──
-    from flask import request, redirect, url_for
-    from flask_login import current_user
-
-    @app.before_request
-    def _public_root_redirect():
-        if request.path == "/" and not current_user.is_authenticated:
-            return redirect(url_for("public.request_pickup"))
-
     # ── Error handlers ──
     from app.main.routes import page_not_found, internal_error, forbidden
     from flask_wtf.csrf import CSRFError

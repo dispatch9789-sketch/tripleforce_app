@@ -601,3 +601,15 @@ a:hover { text-decoration: underline; }
 .public-order-number { display: inline-block; background: var(--tf-navy); color: #fff; font-weight: 700; font-size: 1.15rem; padding: 0.4rem 0.9rem; border-radius: 8px; letter-spacing: 0.03em; }
 .public-footer { flex-shrink: 0; background: var(--tf-navy-dark); color: rgba(255,255,255,0.75); text-align: center; font-size: 0.82rem; padding: 1rem; }
 .public-footer .container { padding: 0; }
+
+/* Public landing/gateway page */
+.public-hero { text-align: center; padding: 2.5rem 1rem 2rem; max-width: 620px; margin: 0 auto; }
+@media (max-width: 575.98px) { .public-hero { padding: 2rem 0.5rem 1.5rem; } }
+.public-hero-icon { width: 76px; height: 76px; border-radius: 18px; background: var(--tf-amber); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 2.3rem; box-shadow: 0 8px 22px rgba(232,119,34,0.35); }
+.public-hero-title { font-size: 1.9rem; font-weight: 800; color: var(--tf-navy); margin: 0 0 0.5rem; line-height: 1.2; }
+.public-hero-subtitle { color: var(--tf-text-muted); font-size: 1.05rem; margin: 0 auto 1.75rem; max-width: 480px; }
+.public-hero-actions { margin-bottom: 1.25rem; }
+.public-hero-actions .btn-primary { min-width: 260px; min-height: 56px; font-size: 1.1rem; font-weight: 700; }
+.public-hero-staff { margin-top: 0.5rem; }
+.public-hero-staff a { color: var(--tf-navy); font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+.public-hero-staff a:hover { color: var(--tf-amber-dark); text-decoration: underline; }

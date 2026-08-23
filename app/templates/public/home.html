@@ -1,0 +1,20 @@
+{% extends "public_base.html" %}
+
+{% block title %}{{ company_name }} — Courier & Medical Delivery{% endblock %}
+
+{% block content %}
+<div class="public-hero text-center">
+    <div class="public-hero-icon mb-3"><i class="bi bi-truck-front-fill"></i></div>
+    <h1 class="public-hero-title">{{ company_name }}</h1>
+    <p class="public-hero-subtitle">Reliable same-day, STAT, and scheduled courier &amp; medical delivery.</p>
+
+    <div class="public-hero-actions">
+        <a href="{{ url_for('public.request_pickup') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-box-arrow-in-up"></i> Request a Pickup
+        </a>
+    </div>
+    <div class="public-hero-staff">
+        <a href="{{ url_for('auth.login') }}">Staff Login <i class="bi bi-arrow-right-short"></i></a>
+    </div>
+</div>
+{% endblock %}
