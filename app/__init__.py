@@ -80,6 +80,14 @@ def create_app(config_class=Config):
     with app.app_context():
         db.create_all()
 
+    # ── Ensure new public pickup-request columns exist on existing DBs ──
+    # Railway deploys with gunicorn only (no `flask db upgrade`), and
+    # db.create_all() does not add columns to existing tables. This
+    # idempotent ALTER TABLE pass makes new customer-form fields persist on
+    # already-deployed databases without losing existing data.
+    from app.schema_migrations import ensure_delivery_columns
+    ensure_delivery_columns(app, db)
+
     # ── Error handlers ──
     from app.main.routes import page_not_found, internal_error, forbidden
     from flask_wtf.csrf import CSRFError

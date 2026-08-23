@@ -96,7 +96,7 @@ def main():
         "is_medical": "y",
         "pickup_facility": "NYC Lab",
         "delivery_facility": "Smith Clinic",
-        "temperature_requirement": "2-8C",
+        "temperature_requirement": "Refrigerated",
         "customer_notes": "Call on arrival",
     }
     r = client.post("/request-pickup", data=payload, follow_redirects=True)

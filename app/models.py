@@ -310,6 +310,20 @@ class Delivery(db.Model):
     tamper_seal_number = db.Column(db.String(100))
     package_condition = db.Column(db.String(200))
 
+    # Public pickup-request operational fields (customer-facing form)
+    company_facility_name = db.Column(db.String(255))
+    pickup_contact_phone = db.Column(db.String(50))
+    delivery_contact_phone = db.Column(db.String(50))
+    delivery_type = db.Column(db.String(50))          # what is being transported
+    delivery_type_other = db.Column(db.String(200))   # free-text when delivery_type == Other
+    trip_type = db.Column(db.String(30))              # how the trip is structured
+    # delivery_deadline (Requested Delivery Deadline) already exists above
+    reference_number = db.Column(db.String(100))      # PO / account / case ref
+    package_weight = db.Column(db.String(50))         # approximate, free-text (e.g. "5 lbs")
+    package_size = db.Column(db.String(100))           # approximate, free-text
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurring_route_notes = db.Column(db.Text)
+
     # Metadata
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

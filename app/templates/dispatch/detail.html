@@ -53,17 +53,39 @@
             <div class="card-header"><i class="bi bi-info-circle-fill"></i> Delivery Details</div>
             <div class="card-body">
                 <dl class="row mb-0" style="font-size:0.9rem;">
+                    <dt class="col-sm-4 text-muted">Company / Facility</dt>
+                    <dd class="col-sm-8">{{ delivery.company_facility_name or '—' }}</dd>
+
                     <dt class="col-sm-4 text-muted">Customer</dt>
                     <dd class="col-sm-8">{% if delivery.customer %}<a href="{{ url_for('customers.detail', customer_id=delivery.customer.id) }}">{{ delivery.customer.business_name }}</a>{% else %}Walk-in{% endif %}</dd>
 
                     <dt class="col-sm-4 text-muted">Service Type</dt>
                     <dd class="col-sm-8">{{ delivery.service_type or '—' }}</dd>
 
+                    <dt class="col-sm-4 text-muted">Delivery Type</dt>
+                    <dd class="col-sm-8">{{ delivery.delivery_type or '—' }}{% if delivery.delivery_type_other %} — {{ delivery.delivery_type_other }}{% endif %}</dd>
+
+                    <dt class="col-sm-4 text-muted">Trip Type</dt>
+                    <dd class="col-sm-8">{{ delivery.trip_type or '—' }}</dd>
+
                     <dt class="col-sm-4 text-muted">Package Type</dt>
                     <dd class="col-sm-8">{{ delivery.package_type or '—' }}</dd>
 
                     <dt class="col-sm-4 text-muted">Quantity</dt>
                     <dd class="col-sm-8">{{ delivery.quantity or 1 }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Weight / Size</dt>
+                    <dd class="col-sm-8">
+                        {% set _w = delivery.package_weight or '' %}
+                        {% set _s = delivery.package_size or '' %}
+                        {% if _w and _s %}{{ _w }} · {{ _s }}
+                        {% elif _w %}{{ _w }}
+                        {% elif _s %}{{ _s }}
+                        {% else %}—{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Reference / PO / Account #</dt>
+                    <dd class="col-sm-8">{{ delivery.reference_number or '—' }}</dd>
 
                     <dt class="col-sm-4 text-muted">Mileage</dt>
                     <dd class="col-sm-8">{{ delivery.mileage or 0 }} mi</dd>
@@ -73,6 +95,9 @@
 
                     <dt class="col-sm-4 text-muted">Quote Amount</dt>
                     <dd class="col-sm-8">{{ delivery.quote_amount | currency }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Recurring Route</dt>
+                    <dd class="col-sm-8">{% if delivery.is_recurring %}<span class="badge bg-info text-dark">Yes</span>{% if delivery.recurring_route_notes %} {{ delivery.recurring_route_notes }}{% endif %}{% else %}No{% endif %}</dd>
                 </dl>
             </div>
         </div>
@@ -85,6 +110,7 @@
                     <div class="col-md-6">
                         <h6 class="text-muted text-uppercase" style="font-size:0.75rem;"><i class="bi bi-box-arrow-in-down"></i> Pickup</h6>
                         <p class="mb-1"><strong>{{ delivery.pickup_contact or '—' }}</strong></p>
+                        {% if delivery.pickup_contact_phone %}<p class="mb-1 text-muted" style="font-size:0.85rem;"><i class="bi bi-telephone"></i> {{ delivery.pickup_contact_phone }}</p>{% endif %}
                         <p class="mb-1">{{ delivery.pickup_address or '—' }}</p>
                         <p class="mb-1 text-muted" style="font-size:0.85rem;">{{ delivery.pickup_datetime | datetime if delivery.pickup_datetime else 'Not scheduled' }}</p>
                         {% if delivery.pickup_instructions %}<p class="mb-0 text-muted" style="font-size:0.85rem;"><i class="bi bi-info-circle"></i> {{ delivery.pickup_instructions }}</p>{% endif %}
@@ -92,8 +118,9 @@
                     <div class="col-md-6">
                         <h6 class="text-muted text-uppercase" style="font-size:0.75rem;"><i class="bi bi-box-arrow-up"></i> Delivery</h6>
                         <p class="mb-1"><strong>{{ delivery.delivery_contact or '—' }}</strong></p>
+                        {% if delivery.delivery_contact_phone %}<p class="mb-1 text-muted" style="font-size:0.85rem;"><i class="bi bi-telephone"></i> {{ delivery.delivery_contact_phone }}</p>{% endif %}
                         <p class="mb-1">{{ delivery.delivery_address or '—' }}</p>
-                        <p class="mb-1 text-muted" style="font-size:0.85rem;">Deadline: {{ delivery.delivery_deadline | datetime if delivery.delivery_deadline else '—' }}</p>
+                        <p class="mb-1 text-muted" style="font-size:0.85rem;">Requested Delivery Deadline: {{ delivery.delivery_deadline | datetime if delivery.delivery_deadline else '—' }}</p>
                         {% if delivery.delivery_instructions %}<p class="mb-0 text-muted" style="font-size:0.85rem;"><i class="bi bi-info-circle"></i> {{ delivery.delivery_instructions }}</p>{% endif %}
                     </div>
                 </div>

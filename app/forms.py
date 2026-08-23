@@ -120,7 +120,29 @@ class QuoteSaveForm(FlaskForm):
 # ═══════════════════════════════════════════════════════════════
 #  DELIVERY FORMS
 # ═══════════════════════════════════════════════════════════════
-SERVICE_TYPES = ["STAT", "Same-day", "Scheduled", "Route", "Standard"]
+SERVICE_TYPES = ["Standard", "Rush", "STAT", "Same-day", "Scheduled", "Route"]
+
+# What is being transported (distinct from Service Type = urgency)
+DELIVERY_TYPES = [
+    "Medical Specimen / Lab Sample",
+    "Pharmacy / Medication",
+    "Medical Supplies / Equipment",
+    "Documents / Records",
+    "General Package",
+    "Auto Parts",
+    "Other",
+]
+
+# How the physical trip is structured (distinct from Service Type and Delivery Type)
+TRIP_TYPES = ["One-way", "Round Trip", "Multi-stop"]
+
+# Medical courier temperature handling (dropdown on the customer form)
+TEMPERATURE_REQUIREMENTS = [
+    "Room Temperature",
+    "Refrigerated",
+    "Frozen",
+    "Other / Special Requirement",
+]
 
 
 class DeliveryForm(FlaskForm):
@@ -163,32 +185,50 @@ class DeliveryForm(FlaskForm):
 # ═══════════════════════════════════════════════════════════════
 class CustomerPickupRequestForm(FlaskForm):
     # Who is requesting the pickup
+    company_facility_name = StringField("Company / Facility Name", validators=[Optional(), Length(max=255)])
     requester_name = StringField("Your Name", validators=[DataRequired(), Length(max=200)])
     requester_phone = StringField("Your Phone", validators=[DataRequired(), Length(max=50)])
     requester_email = StringField("Your Email", validators=[Optional(), Email(), Length(max=200)])
 
     # Pickup details
     pickup_contact = StringField("Pickup Contact Name", validators=[Optional(), Length(max=200)])
+    pickup_contact_phone = StringField("Pickup Contact Phone", validators=[Optional(), Length(max=50)])
     pickup_address = StringField("Pickup Address", validators=[DataRequired(), Length(max=500)])
     pickup_instructions = TextAreaField("Pickup Instructions", validators=[Optional(), Length(max=2000)])
     pickup_datetime = DateTimeField("Requested Pickup Date & Time", format="%Y-%m-%dT%H:%M", validators=[Optional()])
 
     # Delivery details
     delivery_contact = StringField("Delivery Contact Name", validators=[Optional(), Length(max=200)])
+    delivery_contact_phone = StringField("Delivery Contact Phone", validators=[Optional(), Length(max=50)])
     delivery_address = StringField("Delivery Address", validators=[DataRequired(), Length(max=500)])
     delivery_instructions = TextAreaField("Delivery Instructions", validators=[Optional(), Length(max=2000)])
+    requested_delivery_deadline = DateTimeField("Requested Delivery Deadline", format="%Y-%m-%dT%H:%M", validators=[Optional()])
 
     # Service details
     service_type = SelectField("Service Type", choices=[(s, s) for s in SERVICE_TYPES], default="Standard")
+    delivery_type = SelectField("Delivery Type", choices=[("", "— Select —")] + [(d, d) for d in DELIVERY_TYPES], validators=[Optional()])
+    delivery_type_other = StringField("If Other, please describe", validators=[Optional(), Length(max=200)])
+    trip_type = SelectField("Trip Type", choices=[("", "— Select —")] + [(t, t) for t in TRIP_TYPES], validators=[Optional()])
     package_type = StringField("Package Type", validators=[Optional(), Length(max=100)])
     quantity = IntegerField("Quantity", default=1, validators=[Optional(), NumberRange(min=1)])
+    package_weight = StringField("Approximate Weight", validators=[Optional(), Length(max=50)])
+    package_size = StringField("Package Size", validators=[Optional(), Length(max=100)])
     special_handling = TextAreaField("Special Handling Instructions", validators=[Optional(), Length(max=2000)])
+    reference_number = StringField("Reference / PO / Account Number", validators=[Optional(), Length(max=100)])
 
     # Medical courier options
     is_medical = BooleanField("This is a medical courier delivery")
     pickup_facility = StringField("Pickup Facility", validators=[Optional(), Length(max=255)])
     delivery_facility = StringField("Delivery Facility", validators=[Optional(), Length(max=255)])
-    temperature_requirement = StringField("Temperature Requirement", validators=[Optional(), Length(max=100)])
+    temperature_requirement = SelectField(
+        "Temperature Requirement",
+        choices=[("", "— Select —")] + [(t, t) for t in TEMPERATURE_REQUIREMENTS],
+        validators=[Optional()],
+    )
+
+    # Recurring route
+    is_recurring = SelectField("Is this a recurring route?", choices=[("No", "No"), ("Yes", "Yes")], default="No", validators=[Optional()])
+    recurring_route_notes = TextAreaField("Route / Schedule Notes", validators=[Optional(), Length(max=2000)])
 
     customer_notes = TextAreaField("Additional Notes", validators=[Optional(), Length(max=2000)])
     submit = SubmitField("Request Pickup")

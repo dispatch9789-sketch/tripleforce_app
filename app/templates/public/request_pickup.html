@@ -31,6 +31,10 @@
 
         <div class="public-section-label"><i class="bi bi-person-lines-fill"></i> Your Contact Information</div>
         <div class="row g-3">
+            <div class="col-12">
+                {{ form.company_facility_name.label(class="form-label") }}
+                {{ form.company_facility_name(class="form-control", placeholder="Lab, imaging center, pharmacy, medical office, or business name") }}
+            </div>
             <div class="col-md-6">
                 {{ form.requester_name.label(class="form-label") }}
                 {{ form.requester_name(class="form-control", placeholder="First and last name") }}
@@ -64,9 +68,13 @@
                 {{ form.pickup_contact.label(class="form-label") }}
                 {{ form.pickup_contact(class="form-control", placeholder="Person at pickup location (if different)") }}
             </div>
+            <div class="col-md-6">
+                {{ form.pickup_contact_phone.label(class="form-label") }}
+                {{ form.pickup_contact_phone(class="form-control", placeholder="(555) 123-4567 — who to call at pickup") }}
+            </div>
             <div class="col-12">
                 {{ form.pickup_instructions.label(class="form-label") }}
-                {{ form.pickup_instructions(class="form-control", placeholder="Gate codes, parking, building, etc.") }}
+                {{ form.pickup_instructions(class="form-control", placeholder="Suite / loading dock / front desk / call upon arrival / building access") }}
             </div>
         </div>
 
@@ -81,6 +89,15 @@
                 {{ form.delivery_contact.label(class="form-label") }}
                 {{ form.delivery_contact(class="form-control", placeholder="Recipient name") }}
             </div>
+            <div class="col-md-4">
+                {{ form.delivery_contact_phone.label(class="form-label") }}
+                {{ form.delivery_contact_phone(class="form-control", placeholder="(555) 123-4567 — who to call at destination") }}
+            </div>
+            <div class="col-md-8">
+                {{ form.requested_delivery_deadline.label(class="form-label") }}
+                {{ form.requested_delivery_deadline(class="form-control") }}
+                <div class="form-text small">Expected delivery time/deadline — especially for Rush, STAT, Same-day, or Scheduled.</div>
+            </div>
             <div class="col-12">
                 {{ form.delivery_instructions.label(class="form-label") }}
                 {{ form.delivery_instructions(class="form-control", placeholder="Drop-off notes, access, contact info") }}
@@ -89,18 +106,45 @@
 
         <div class="public-section-label"><i class="bi bi-box-seam-fill"></i> Shipment Details</div>
         <div class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 {{ form.service_type.label(class="form-label") }}
                 {{ form.service_type(class="form-select") }}
+                <div class="form-text small">Urgency / service level.</div>
+            </div>
+            <div class="col-md-4">
+                {{ form.delivery_type.label(class="form-label") }}
+                {{ form.delivery_type(class="form-select") }}
+                <div class="form-text small">What is being transported.</div>
+            </div>
+            <div class="col-md-4">
+                {{ form.trip_type.label(class="form-label") }}
+                {{ form.trip_type(class="form-select") }}
+                <div class="form-text small">How the trip is structured.</div>
+            </div>
+            <div class="col-12" id="delivery-type-other-wrap" style="display:none;">
+                {{ form.delivery_type_other.label(class="form-label") }}
+                {{ form.delivery_type_other(class="form-control", placeholder="Please describe the delivery") }}
             </div>
             <div class="col-md-4">
                 {{ form.package_type.label(class="form-label") }}
                 {{ form.package_type(class="form-control", placeholder="e.g. Envelope, Box, Pallet") }}
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 {{ form.quantity.label(class="form-label") }}
                 {{ form.quantity(class="form-control") }}
                 {% for e in form.quantity.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-2">
+                {{ form.package_weight.label(class="form-label") }}
+                {{ form.package_weight(class="form-control", placeholder="e.g. 5 lbs") }}
+            </div>
+            <div class="col-md-2">
+                {{ form.package_size.label(class="form-label") }}
+                {{ form.package_size(class="form-control", placeholder="e.g. 12x8x6 in") }}
+            </div>
+            <div class="col-md-6">
+                {{ form.reference_number.label(class="form-label") }}
+                {{ form.reference_number(class="form-control", placeholder="PO / account / case reference (optional)") }}
             </div>
             <div class="col-12">
                 {{ form.special_handling.label(class="form-label") }}
@@ -126,7 +170,19 @@
             </div>
             <div class="col-md-6">
                 {{ form.temperature_requirement.label(class="form-label") }}
-                {{ form.temperature_requirement(class="form-control", placeholder="e.g. Refrigerated 2-8°C") }}
+                {{ form.temperature_requirement(class="form-select") }}
+            </div>
+        </div>
+
+        <div class="public-section-label"><i class="bi bi-arrow-repeat"></i> Recurring Route</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.is_recurring.label(class="form-label") }}
+                {{ form.is_recurring(class="form-select") }}
+            </div>
+            <div class="col-12" id="recurring-notes-wrap" style="display:none;">
+                {{ form.recurring_route_notes.label(class="form-label") }}
+                {{ form.recurring_route_notes(class="form-control", rows=2, placeholder="Days, times, stops, or schedule notes") }}
             </div>
         </div>
 
@@ -142,6 +198,27 @@
         </div>
     </form>
 </div>
+<script>
+// Show/hide conditional fields only. The inputs stay enabled and are always
+// submitted to the server, so persistence does not depend on JavaScript.
+(function () {
+    var dt = document.querySelector('select[name="delivery_type"]');
+    var dtOther = document.getElementById('delivery-type-other-wrap');
+    function syncDeliveryType() {
+        if (!dt || !dtOther) return;
+        dtOther.style.display = (dt.value === 'Other') ? '' : 'none';
+    }
+    if (dt) { dt.addEventListener('change', syncDeliveryType); syncDeliveryType(); }
+
+    var rec = document.querySelector('select[name="is_recurring"]');
+    var recNotes = document.getElementById('recurring-notes-wrap');
+    function syncRecurring() {
+        if (!rec || !recNotes) return;
+        recNotes.style.display = (rec.value === 'Yes') ? '' : 'none';
+    }
+    if (rec) { rec.addEventListener('change', syncRecurring); syncRecurring(); }
+})();
+</script>
 {% endif %}
 
 {% endblock %}

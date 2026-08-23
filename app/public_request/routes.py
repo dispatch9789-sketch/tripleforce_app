@@ -52,6 +52,8 @@ def request_pickup():
         )
         if form.requester_email.data:
             requested_by += " | Email: {}".format(form.requester_email.data)
+        if form.company_facility_name.data:
+            requested_by = "Company / Facility: {}\n".format(form.company_facility_name.data) + requested_by
 
         existing_notes = (form.customer_notes.data or "").strip()
         customer_notes = requested_by + ("\n\n" + existing_notes if existing_notes else "")
@@ -65,21 +67,33 @@ def request_pickup():
         delivery = Delivery(
             order_number=order_number,
             customer_id=None,  # public submission — not linked to a Customer record
+            company_facility_name=form.company_facility_name.data or None,
             pickup_contact=form.pickup_contact.data or requester_contact,
+            pickup_contact_phone=form.pickup_contact_phone.data or None,
             pickup_address=form.pickup_address.data,
             pickup_instructions=form.pickup_instructions.data,
             pickup_datetime=form.pickup_datetime.data,
             delivery_contact=form.delivery_contact.data or form.requester_name.data,
+            delivery_contact_phone=form.delivery_contact_phone.data or None,
             delivery_address=form.delivery_address.data,
             delivery_instructions=form.delivery_instructions.data,
+            delivery_deadline=form.requested_delivery_deadline.data,
             service_type=form.service_type.data,
+            delivery_type=form.delivery_type.data or None,
+            delivery_type_other=(form.delivery_type_other.data or None) if form.delivery_type.data == "Other" else None,
+            trip_type=form.trip_type.data or None,
             package_type=form.package_type.data,
             quantity=form.quantity.data or 1,
+            package_weight=form.package_weight.data or None,
+            package_size=form.package_size.data or None,
             special_handling=form.special_handling.data,
+            reference_number=form.reference_number.data or None,
             is_medical=form.is_medical.data,
             pickup_facility=form.pickup_facility.data,
             delivery_facility=form.delivery_facility.data,
-            temperature_requirement=form.temperature_requirement.data,
+            temperature_requirement=form.temperature_requirement.data or None,
+            is_recurring=(form.is_recurring.data == "Yes"),
+            recurring_route_notes=(form.recurring_route_notes.data or None) if form.is_recurring.data == "Yes" else None,
             customer_notes=customer_notes,
             created_by=None,  # no logged-in staff user for public submissions
             status="New Request",
@@ -106,17 +120,23 @@ def request_pickup():
                 body = (
                     "A new pickup request was submitted from the website.\n\n"
                     "Order #: {}\n"
+                    "Company / Facility: {}\n"
                     "Requested by: {}\n"
                     "Phone: {}\n"
                     "Pickup: {}\n"
                     "Delivery: {}\n"
-                    "Service: {}\n".format(
+                    "Service: {} | Delivery Type: {} | Trip: {}\n"
+                    "Recurring: {}\n".format(
                         order_number,
+                        form.company_facility_name.data or "—",
                         form.requester_name.data,
                         form.requester_phone.data,
                         form.pickup_address.data,
                         form.delivery_address.data,
                         form.service_type.data,
+                        form.delivery_type.data or "—",
+                        form.trip_type.data or "—",
+                        "Yes" if form.is_recurring.data == "Yes" else "No",
                     )
                 )
                 send_email(notify_to, "New Pickup Request — {}".format(order_number), body)
