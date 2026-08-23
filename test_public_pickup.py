@@ -131,6 +131,16 @@ def main():
                 failures.append("pickup_address not persisted correctly")
             if created.is_medical is not True:
                 failures.append("is_medical not persisted correctly")
+            # Status history should mirror the staff route for timeline consistency
+            hist = created.status_history or []
+            print(f"[DB] status_history rows={len(hist)} first={hist[0].status if hist else None} "
+                  f"notes={ (hist[0].notes if hist else None)!r}")
+            if not hist:
+                failures.append("No DeliveryStatusHistory row created for public submission")
+            elif hist[0].status != "New Request":
+                failures.append(f"status_history[0].status={hist[0].status}, expected 'New Request'")
+            elif "public website" not in (hist[0].notes or ""):
+                failures.append("status_history notes does not mention public website")
 
     # ── 4. Internal routes still protected (redirect to login) when logged out ──
     for path in ["/", "/dashboard", "/customers/", "/dispatch/", "/invoices/", "/quotes/", "/reports/"]:

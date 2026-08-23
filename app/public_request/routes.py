@@ -72,6 +72,16 @@ def request_pickup():
             status="New Request",
         )
         db.session.add(delivery)
+
+        # Mirror the staff route: create the initial status-history entry so
+        # the dispatch timeline is consistent for public submissions too.
+        history = DeliveryStatusHistory(
+            delivery=delivery,
+            status="New Request",
+            notes="Pickup request submitted from public website",
+            updated_by=form.requester_name.data or "Website customer",
+        )
+        db.session.add(history)
         db.session.commit()
 
         # Best-effort internal notification email. Never blocks the request
