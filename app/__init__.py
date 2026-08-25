@@ -1,7 +1,7 @@
 """Triple Force Logistic LLC — Flask application factory."""
 import os
 import logging
-from flask import Flask
+from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import Config
 
@@ -87,6 +87,27 @@ def create_app(config_class=Config):
     # already-deployed databases without losing existing data.
     from app.schema_migrations import ensure_delivery_columns
     ensure_delivery_columns(app, db)
+
+    # ── No-cache headers for authenticated staff pages ──
+    # Prevents the browser Back button from revealing usable staff pages
+    # after logout. Applied only when a user is authenticated (and never to
+    # static assets or the intentionally-public customer pages), so public
+    # pages and static files remain cacheable.
+    from flask_login import current_user
+
+    @app.after_request
+    def _add_security_headers(response):
+        endpoint = request.endpoint or ""
+        # Never interfere with static asset delivery.
+        if endpoint == "static" or endpoint.startswith("static."):
+            return response
+        # Only set no-store on authenticated (staff) responses. Public pages
+        # (/ and /request-pickup) stay cacheable for customers.
+        if current_user.is_authenticated:
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
 
     # ── Error handlers ──
     from app.main.routes import page_not_found, internal_error, forbidden
