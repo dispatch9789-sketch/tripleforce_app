@@ -153,8 +153,8 @@ def main():
         failures.append("Landing page missing 'Request a Pickup' button")
     if "/request-pickup" not in body_root:
         failures.append("Landing page missing link to /request-pickup")
-    if "/auth/login" in body_root:
-        failures.append("Landing page must NOT expose a Staff Login link to /auth/login (removed for security; staff navigate to /auth/login directly)")
+    if "/auth/login" not in body_root or "Staff Login" not in body_root:
+        failures.append("Landing page must show a visible Staff Login button linking to /auth/login")
     if "sidebar-link" in body_root or 'class="sidebar"' in body_root:
         failures.append("Landing page exposed sidebar/internal nav")
     for path in ["/dashboard", "/customers/", "/dispatch/", "/invoices/", "/quotes/", "/reports/"]:

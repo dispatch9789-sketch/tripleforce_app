@@ -8,10 +8,27 @@
     <h1 class="public-hero-title">{{ company_name }}</h1>
     <p class="public-hero-subtitle">Reliable same-day, STAT, and scheduled courier &amp; medical delivery.</p>
 
+    {# ── Two separate entrances on one landing page ──────────────────────
+       REQUEST A PICKUP  → public customer form (no login, no staff session)
+       STAFF LOGIN        → dedicated private office login (credentials required)
+
+       These are intentionally two different operations. The staff-login
+       button is plainly visible, but every internal office route is still
+       protected server-side by @login_required — the button does NOT grant
+       access on its own. A logged-out visitor who clicks it lands on the
+       login page; only valid staff credentials reach the dashboard.
+    #}
     <div class="public-hero-actions">
         <a href="{{ url_for('public.request_pickup') }}" class="btn btn-primary btn-lg">
             <i class="bi bi-box-arrow-in-up"></i> Request a Pickup
         </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-shield-lock"></i> Staff Login
+        </a>
     </div>
+
+    <p class="public-hero-help text-muted mt-3 mb-0">
+        Customers: tap <strong>Request a Pickup</strong>. Staff: tap <strong>Staff Login</strong> to reach the office.
+    </p>
 </div>
 {% endblock %}

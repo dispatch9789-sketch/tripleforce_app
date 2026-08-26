@@ -4,6 +4,7 @@ import secrets
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
+from urllib.parse import urlparse, urljoin
 
 from app.extensions import db
 from app.models import User
@@ -18,6 +19,21 @@ def _default_landing_page(user):
     if user.role == "driver":
         return url_for("driver_portal.dashboard")
     return url_for("main.dashboard")
+
+
+def _is_safe_url(target):
+    """Return True only for same-site relative redirect targets.
+
+    Flask-Login's `login_view` redirect appends the requested path as
+    `?next=...`. We must never honor an absolute/external URL there, since
+    `redirect(next)` on `//evil.com` would send a just-logged-in staff member
+    off-site (open redirect). Only relative, single-slash paths are allowed.
+    """
+    if not target:
+        return False
+    ref = urlparse(request.host_url)
+    test = urlparse(urljoin(request.host_url, target))
+    return test.scheme in ("http", "https") and ref.netloc == test.netloc
 
 
 @auth.route("/login", methods=["GET", "POST"])
@@ -35,6 +51,9 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             next_page = request.args.get("next")
+            # Guard against open redirect: only honor same-site relative URLs.
+            if next_page and not _is_safe_url(next_page):
+                next_page = None
             flash("Welcome back!", "success")
             return redirect(next_page or _default_landing_page(user))
         flash("Invalid email or password.", "danger")
@@ -46,7 +65,10 @@ def login():
 def logout():
     logout_user()
     flash("You have been logged out.", "info")
-    return redirect(url_for("auth.login"))
+    # Logging out returns staff to the PUBLIC landing page (two-entrance
+    # gateway), not the staff login screen. The office area remains
+    # blocked: any internal URL now requires login again.
+    return redirect(url_for("public.home"))
 
 
 @auth.route("/reset-password", methods=["GET", "POST"])

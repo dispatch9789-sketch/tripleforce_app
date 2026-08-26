@@ -609,7 +609,8 @@ a:hover { text-decoration: underline; }
 .public-hero-title { font-size: 1.9rem; font-weight: 800; color: var(--tf-navy); margin: 0 0 0.5rem; line-height: 1.2; }
 .public-hero-subtitle { color: var(--tf-text-muted); font-size: 1.05rem; margin: 0 auto 1.75rem; max-width: 480px; }
 .public-hero-actions { margin-bottom: 1.25rem; }
-.public-hero-actions .btn-primary { min-width: 260px; min-height: 56px; font-size: 1.1rem; font-weight: 700; }
-.public-hero-staff { margin-top: 0.5rem; }
-.public-hero-staff a { color: var(--tf-navy); font-size: 0.9rem; font-weight: 600; text-decoration: none; }
-.public-hero-staff a:hover { color: var(--tf-amber-dark); text-decoration: underline; }
+.public-hero-actions .btn { display: block; width: 100%; max-width: 320px; margin: 0 auto 0.7rem; min-height: 56px; font-size: 1.05rem; font-weight: 700; }
+.public-hero-actions .btn-primary { min-width: 0; font-size: 1.1rem; }
+.public-hero-actions .btn-outline-secondary { color: var(--tf-navy); border-color: var(--tf-navy); background: #fff; }
+.public-hero-actions .btn-outline-secondary:hover { background: var(--tf-navy); color: #fff; }
+.public-hero-help { font-size: 0.85rem; }

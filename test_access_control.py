@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Access-control test suite for the Triple Force Logistic app.
 
-Verifies the security fix:
-  1. The public landing page no longer exposes a "Staff Login" link.
+Verifies the two-entrance landing-page security model:
+  1. The public landing page shows BOTH a 'Request a Pickup' button
+     (public customer entrance) AND a visible 'Staff Login' button
+     (private office entrance) — but exposes no internal staff routes or
+     sidebar. The staff-login button is visible; the office behind it is
+     protected, not the link itself.
   2. Logged-out visitors hitting any internal/staff route are redirected
      to the login page (or denied) — protection is enforced on the server,
      not by hiding links.
   3. The customer pickup form stays publicly accessible and unchanged.
   4. Logged-in authorized staff can still reach permitted pages.
   5. Non-admin staff are denied (403) on admin-only routes.
-  6. Authenticated staff pages carry no-cache headers so the browser Back
+  6. Logging out returns staff to the public landing page, and the office
+     area is blocked again (internal URLs redirect to login).
+  7. Authenticated staff pages carry no-cache headers so the browser Back
      button cannot reveal usable staff pages after logout.
 
 Run:  python test_access_control.py
@@ -119,15 +125,22 @@ def main():
     print("TRIPLE FORCE LOGISTIC — ACCESS-CONTROL TEST SUITE")
     print("=" * 64)
 
-    # ── 1. PUBLIC LANDING PAGE: no Staff Login link ──
-    print("\n[1] Public landing page exposes no staff entry point")
+    # ── 1. PUBLIC LANDING PAGE: two visible entrances, office hidden ──
+    print("\n[1] Public landing page shows two entrances, no internal office")
     r = client.get("/")
     test("Landing page GET 200", r.status_code == 200, f"got {r.status_code}")
     body = r.data.decode("utf-8", errors="ignore")
     test("Landing page has 'Request a Pickup' button",
          "Request a Pickup" in body and "/request-pickup" in body)
-    test("Landing page has NO 'Staff Login' link", "Staff Login" not in body)
-    test("Landing page source has NO /auth/login URL", "/auth/login" not in body)
+    test("Landing page has visible 'Staff Login' button",
+         "Staff Login" in body and "/auth/login" in body)
+    test("Landing page exposes NO internal staff routes",
+         "/dashboard" not in body and "/dispatch" not in body
+         and "/customers" not in body and "/invoices" not in body
+         and "/outreach" not in body and "/settings" not in body
+         and "/reports" not in body and "/reminders" not in body)
+    test("Landing page has no internal sidebar",
+         'class="sidebar"' not in body.lower())
 
     # ── 2. CUSTOMER PICKUP FORM STAYS PUBLIC ──
     print("\n[2] Customer pickup form remains publicly accessible")
@@ -164,9 +177,14 @@ def main():
     test("Dashboard Cache-Control includes no-store",
          "no-store" in cc, f"got '{cc}'")
 
-    # ── 6. AFTER LOGOUT, PROTECTED URL REDIRECTS TO LOGIN ──
-    print("\n[6] After logout, protected URL redirects to login (Back-button safety)")
-    client.get("/auth/logout", follow_redirects=False)
+    # ── 6. LOGOUT RETURNS TO PUBLIC LANDING PAGE; OFFICE BLOCKED AGAIN ──
+    print("\n[6] Logout returns to public landing page; office blocked again")
+    r = client.get("/auth/logout", follow_redirects=False)
+    loc = r.headers.get("Location") or ""
+    test("Logout → redirect to public landing page",
+         r.status_code in (301, 302, 303, 308)
+         and loc.rstrip("/") == "" and "/auth/login" not in loc,
+         f"got {r.status_code} -> {loc}")
     r = client.get("/dashboard", follow_redirects=False)
     test("Post-logout /dashboard → redirect to login",
          r.status_code in (301, 302, 303, 308)
