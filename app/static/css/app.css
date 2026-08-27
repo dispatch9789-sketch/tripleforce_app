@@ -614,3 +614,200 @@ a:hover { text-decoration: underline; }
 .public-hero-actions .btn-outline-secondary { color: var(--tf-navy); border-color: var(--tf-navy); background: #fff; }
 .public-hero-actions .btn-outline-secondary:hover { background: var(--tf-navy); color: #fff; }
 .public-hero-help { font-size: 0.85rem; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DRIVER DASHBOARD — Mobile-first, branded, large touch targets
+   ═══════════════════════════════════════════════════════════════ */
+
+.driver-dashboard {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* ── Status Banner ── */
+.driver-status-banner {
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.driver-status-banner.status-off-duty { background: linear-gradient(135deg, #64748b, #475569); }
+.driver-status-banner.status-clocked-in { background: linear-gradient(135deg, var(--tf-navy), var(--tf-navy-dark)); }
+.driver-status-banner.status-on-break { background: linear-gradient(135deg, #d97706, #b45309); }
+.driver-status-banner.status-on-route { background: linear-gradient(135deg, #16a34a, #15803d); }
+.driver-status-banner.status-route-completed { background: linear-gradient(135deg, var(--tf-amber), var(--tf-amber-dark)); }
+
+.status-label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; }
+.status-value { font-size: 1.4rem; font-weight: 700; display: block; }
+.status-indicator i { font-size: 2rem; opacity: 0.9; }
+
+/* ── Clock Controls ── */
+.clock-controls { margin-bottom: 0.25rem; }
+.clock-controls .btn-lg { min-height: 52px; font-size: 1.05rem; font-weight: 600; }
+
+/* ── Route Status Bar ── */
+.route-status-bar {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.625rem;
+    padding: 0.75rem 1rem;
+}
+.route-label { font-weight: 700; color: var(--tf-navy); margin-right: 0.5rem; }
+[data-theme="dark"] .route-label { color: var(--tf-amber-light); }
+.route-value { color: var(--tf-text); }
+.route-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+/* ── Checklist Card ── */
+.checklist-card {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.checklist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+}
+.checklist-header:hover { background: var(--tf-surface-alt); }
+.checklist-title { font-weight: 700; font-size: 1.05rem; color: var(--tf-navy); }
+[data-theme="dark"] .checklist-title { color: var(--tf-amber-light); }
+.checklist-count { font-size: 0.85rem; font-weight: 600; color: var(--tf-text-muted); }
+.checklist-chevron { transition: transform 0.2s; color: var(--tf-text-muted); }
+.checklist-header[aria-expanded="true"] .checklist-chevron { transform: rotate(180deg); }
+.checklist-body { padding: 0.5rem 1.25rem 0.75rem; }
+.checklist-item { padding: 0.6rem 0; border-bottom: 1px solid var(--tf-border); }
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item.completed .checklist-label { color: var(--tf-success); text-decoration: line-through; opacity: 0.7; }
+.checklist-toggle { font-size: 1.4rem; line-height: 1; }
+.checklist-label { font-weight: 500; }
+
+/* ── Metrics Grid ── */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+}
+.metric-card {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.625rem;
+    padding: 1rem 0.875rem;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.metric-card.metric-full { grid-column: span 2; }
+.metric-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--tf-navy);
+    line-height: 1.2;
+}
+[data-theme="dark"] .metric-value { color: var(--tf-amber-light); }
+.metric-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: var(--tf-text-muted);
+    margin-top: 0.25rem;
+}
+@media (max-width: 575.98px) {
+    .metric-value { font-size: 1.3rem; }
+    .metric-label { font-size: 0.65rem; }
+}
+
+/* ── Next Stop Card ── */
+.next-stop-card {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.next-stop-header {
+    background: var(--tf-navy);
+    color: #fff;
+    padding: 0.625rem 1rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.next-stop-body {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.next-stop-info { flex: 1; min-width: 0; }
+.next-stop-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+/* ── Quick Actions ── */
+.quick-actions .btn { min-height: 48px; font-weight: 600; }
+
+/* ── Messages Section ── */
+.messages-section {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+.messages-header {
+    background: var(--tf-surface-alt);
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--tf-border);
+}
+.messages-list { max-height: 300px; overflow-y: auto; }
+.message-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--tf-border);
+}
+.message-item:last-child { border-bottom: none; }
+.message-item.unread { background: var(--tf-info-bg); }
+.message-item.urgent { border-left: 3px solid var(--tf-danger); }
+.message-text { font-size: 0.9rem; line-height: 1.4; }
+
+/* ── Driver Ops Overview ── */
+.driver-ops-card {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.625rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: box-shadow 0.15s ease;
+}
+.driver-ops-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.driver-ops-name { font-weight: 700; color: var(--tf-navy); font-size: 1.05rem; }
+[data-theme="dark"] .driver-ops-name { color: var(--tf-amber-light); }
+.driver-ops-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.driver-ops-stat { font-size: 0.8rem; }
+.driver-ops-stat strong { font-size: 1.1rem; color: var(--tf-navy); display: block; }
+[data-theme="dark"] .driver-ops-stat strong { color: var(--tf-amber-light); }
+
+/* ── Responsive ── */
+@media (max-width: 575.98px) {
+    .driver-dashboard { gap: 0.5rem; }
+    .driver-status-banner { padding: 0.75rem 1rem; }
+    .status-value { font-size: 1.2rem; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .metric-card { padding: 0.75rem 0.5rem; }
+    .route-actions { width: 100%; margin-top: 0.5rem; }
+    .route-actions input { width: 100% !important; margin-bottom: 0.25rem; }
+    .route-actions button { width: 100%; }
+    .next-stop-body { flex-direction: column; align-items: stretch; }
+    .next-stop-actions { justify-content: flex-end; }
+}

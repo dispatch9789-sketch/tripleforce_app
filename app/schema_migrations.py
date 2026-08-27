@@ -80,3 +80,25 @@ def ensure_delivery_columns(app, db):
             logger.info("Schema migration: added deliveries columns: %s", ", ".join(added))
         if skipped:
             logger.info("Schema migration: columns already added by another worker: %s", ", ".join(skipped))
+
+
+def seed_checklist_items(app, db):
+    """Seed default checklist items if the table is empty.
+
+    Called after db.create_all() so the checklist_items table exists.
+    Idempotent: only seeds when the table has zero rows.
+    """
+    with app.app_context():
+        inspector = inspect(db.engine)
+        if "checklist_items" not in inspector.get_table_names():
+            return
+
+        from app.models import ChecklistItem, DEFAULT_CHECKLIST_ITEMS
+        existing = db.session.query(ChecklistItem).count()
+        if existing > 0:
+            return
+        for i, label in enumerate(DEFAULT_CHECKLIST_ITEMS):
+            item = ChecklistItem(label=label, sort_order=i, is_active=True)
+            db.session.add(item)
+        db.session.commit()
+        logger.info("Schema migration: seeded %d default checklist items", len(DEFAULT_CHECKLIST_ITEMS))

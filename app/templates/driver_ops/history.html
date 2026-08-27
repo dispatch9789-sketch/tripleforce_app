@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Driver History — Triple Force Logistic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="page-title mb-0">{{ driver.name }}</h1>
+        <p class="page-subtitle">42-Week History</p>
+    </div>
+    <a href="{{ url_for('driver_ops.driver_detail', driver_id=driver.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Driver Detail
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar3-fill"></i> Weekly Summaries</span>
+        <span class="badge bg-secondary">{{ history|length }} Weeks</span>
+    </div>
+    <div class="card-body p-0">
+        {% if history %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Week Start</th>
+                        <th>Week End</th>
+                        <th class="text-center">Work Hours</th>
+                        <th class="text-center">Drive Hours</th>
+                        <th class="text-center">Miles</th>
+                        <th class="text-center">Stops</th>
+                        <th class="text-center">Deliveries</th>
+                        <th class="text-center">Pickups</th>
+                        <th class="text-center">Stops/Hr</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in history %}
+                    <tr>
+                        <td>{{ week.week_start.strftime('%b %d, %Y') }}</td>
+                        <td>{{ week.week_end.strftime('%b %d, %Y') }}</td>
+                        <td class="text-center">{{ '%dh %dm' % (week.work_hours|int, ((week.work_hours % 1) * 60)|int) }}</td>
+                        <td class="text-center">{{ '%dh %dm' % (week.drive_hours|int, ((week.drive_hours % 1) * 60)|int) }}</td>
+                        <td class="text-center">{{ '%.1f' % week.miles }}</td>
+                        <td class="text-center">{{ week.stops }}</td>
+                        <td class="text-center">{{ week.deliveries }}</td>
+                        <td class="text-center">{{ week.pickups }}</td>
+                        <td class="text-center">{{ '%.2f' % week.stops_per_hour }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="bi bi-calendar-x" style="font-size:2.5rem;color:var(--tf-text-light);"></i>
+            <p class="text-muted mt-2 mb-0">No history records found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

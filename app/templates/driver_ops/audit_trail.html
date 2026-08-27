@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Audit Trail — Triple Force Logistic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="page-title mb-0">{{ driver.name }}</h1>
+        <p class="page-subtitle">Audit Trail — Correction History</p>
+    </div>
+    <a href="{{ url_for('driver_ops.driver_detail', driver_id=driver.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Driver Detail
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-check"></i> Corrections</span>
+        <span class="badge bg-secondary">{{ corrections|length }} Records</span>
+    </div>
+    <div class="card-body p-0">
+        {% if corrections %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Reason</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                        <th>Corrected By</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in corrections %}
+                    <tr>
+                        <td>
+                            <span class="badge badge-status
+                                {% if c.correction_type == 'clock_in' %}badge-new
+                                {% elif c.correction_type == 'clock_out' %}badge-scheduled
+                                {% elif c.correction_type == 'break' %}badge-pending
+                                {% elif c.correction_type == 'route' %}badge-progress
+                                {% elif c.correction_type == 'stop' %}badge-accepted
+                                {% elif c.correction_type == 'mileage' %}badge-delivered
+                                {% else %}badge-new{% endif %}" style="text-transform:capitalize;">{{ c.correction_type|replace('_', ' ') }}</span>
+                        </td>
+                        <td>{{ c.description }}</td>
+                        <td>{{ c.reason }}</td>
+                        <td>
+                            {% if c.old_value %}
+                            <code class="text-danger">{{ c.old_value }}</code>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if c.new_value %}
+                            <code class="text-success">{{ c.new_value }}</code>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td>{{ c.corrector.full_name or c.corrector.email if c.corrector else 'System' }}</td>
+                        <td>{{ c.created_at|datetime }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="bi bi-shield-check" style="font-size:2.5rem;color:var(--tf-text-light);"></i>
+            <p class="text-muted mt-2 mb-0">No corrections recorded for this driver.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

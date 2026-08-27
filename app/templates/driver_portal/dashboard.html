@@ -1,85 +1,328 @@
 {% extends "base.html" %}
-{% block title %}My Deliveries — Triple Force Logistic{% endblock %}
-{% block content %}
-<h1 class="page-title">My Deliveries</h1>
-<p class="page-subtitle">Welcome, {{ current_user.full_name or current_user.email }}{% if driver %} — {{ driver.vehicle_make }} {{ driver.vehicle_model }} {{ ('(' + driver.vehicle_plate + ')') if driver.vehicle_plate else '' }}{% endif %}</p>
+{% block title %}Driver Dashboard — Triple Force Logistic{% endblock %}
 
+{% block content %}
 {% if not driver %}
 <div class="alert alert-warning">
     <i class="bi bi-exclamation-triangle"></i> No driver profile is linked to your account yet. Contact your administrator to complete setup.
 </div>
 {% else %}
+<div class="driver-dashboard">
+    <!-- ── Status Banner ── -->
+    <div class="driver-status-banner status-{{ status|lower|replace(' ', '-') }}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="status-label">Status</span>
+                <span class="status-value" data-testid="text-driver-status">{{ status }}</span>
+            </div>
+            <div class="status-indicator">
+                <i class="bi {% if status == 'Off Duty' %}bi-moon-fill{% elif status == 'On Break' %}bi-cup-hot-fill{% elif status == 'On Route' %}bi-truck-front-fill{% else %}bi-person-check-fill{% endif %}"></i>
+            </div>
+        </div>
+    </div>
 
-<!-- ── Stat Cards ── -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-label">Scheduled Today</div>
-                <div class="stat-value" data-testid="text-today-count">{{ today_count }}</div>
+    <!-- ── Clock Controls ── -->
+    <div class="clock-controls">
+        {% if not session %}
+        <form method="POST" action="{{ url_for('driver_portal.clock_in') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-tf-primary btn-lg w-100" data-testid="btn-clock-in">
+                <i class="bi bi-box-arrow-in-right"></i> Clock In
+            </button>
+        </form>
+        {% else %}
+        <div class="row g-2">
+            {% if active_break %}
+            <div class="col">
+                <form method="POST" action="{{ url_for('driver_portal.end_break') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-tf-amber btn-lg w-100" data-testid="btn-end-break">
+                        <i class="bi bi-play-fill"></i> End Break
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="col">
+                <form method="POST" action="{{ url_for('driver_portal.start_break') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-warning btn-lg w-100" data-testid="btn-start-break">
+                        <i class="bi bi-pause-fill"></i> Start Break
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+            <div class="col">
+                <form method="POST" action="{{ url_for('driver_portal.clock_out') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-lg w-100" data-testid="btn-clock-out">
+                        <i class="bi bi-box-arrow-right"></i> Clock Out
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Route Status ── -->
+    <div class="route-status-bar">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="route-label">Route:</span>
+                <span class="route-value" data-testid="text-route-status">
+                    {% if active_route %}Active{% else %}No current route{% endif %}
+                </span>
+            </div>
+            <div class="route-actions">
+                {% if not active_route and session %}
+                <form method="POST" action="{{ url_for('driver_portal.start_route') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="number" name="start_odometer" placeholder="Start odometer" class="form-control form-control-sm d-inline-block" style="width: 120px;" step="0.1">
+                    <button type="submit" class="btn btn-tf-primary btn-sm" data-testid="btn-start-route">Start Route</button>
+                </form>
+                {% elif active_route %}
+                <form method="POST" action="{{ url_for('driver_portal.end_route') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="number" name="end_odometer" placeholder="End odometer" class="form-control form-control-sm d-inline-block" style="width: 120px;" step="0.1">
+                    <button type="submit" class="btn btn-tf-amber btn-sm" data-testid="btn-end-route">End Route</button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-label">Active Deliveries</div>
-                <div class="stat-value" data-testid="text-active-count">{{ active_count }}</div>
+
+    <!-- ── Daily Checklist (Expandable) ── -->
+    <div class="checklist-card">
+        <div class="checklist-header" data-bs-toggle="collapse" data-bs-target="#checklistBody" role="button">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi {% if checklist_completed == checklist_total and checklist_total > 0 %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %}"></i>
+                <span class="checklist-title">Daily Checklist</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="checklist-count" data-testid="text-checklist-count">{{ checklist_completed }}/{{ checklist_total }} Completed</span>
+                <i class="bi bi-chevron-down checklist-chevron"></i>
+            </div>
+        </div>
+        <div class="collapse" id="checklistBody">
+            <div class="checklist-body">
+                {% for item in checklist_items %}
+                {% set resp = checklist_responses.get(item.id) %}
+                <div class="checklist-item {% if resp and resp.is_completed %}completed{% endif %}">
+                    <form method="POST" action="{{ url_for('driver_portal.toggle_checklist_item') }}" class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <button type="submit" class="btn btn-link p-0 checklist-toggle" data-testid="btn-toggle-checklist-{{ item.id }}">
+                            <i class="bi {% if resp and resp.is_completed %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %}"></i>
+                        </button>
+                        <span class="checklist-label">{{ item.label }}</span>
+                        {% if resp and resp.completed_at %}
+                        <small class="text-muted ms-auto">{{ resp.completed_at.strftime('%I:%M %p') }}</small>
+                        {% endif %}
+                    </form>
+                </div>
+                {% endfor %}
+                {% if not checklist_items %}
+                <p class="text-muted text-center py-3">No checklist items configured.</p>
+                {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-label">Completed Today</div>
-                <div class="stat-value" data-testid="text-completed-count">{{ completed_count }}</div>
+
+    <!-- ── Metric Cards ── -->
+    <div class="metrics-grid">
+        <!-- Stops Completed (full width) -->
+        <div class="metric-card metric-full">
+            <div class="metric-value" data-testid="text-stops-today">{{ today_stats.stops }}</div>
+            <div class="metric-label">Stops Completed</div>
+        </div>
+
+        <!-- 2-column grid -->
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-deliveries-today">{{ today_stats.deliveries }}</div>
+            <div class="metric-label">Packages Delivered</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-pickups-today">{{ today_stats.pickups }}</div>
+            <div class="metric-label">Packages Picked Up</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-drive-hrs-today">{{ '%dh %dm' % (today_stats.drive_hours|int, ((today_stats.drive_hours % 1) * 60)|int) }}</div>
+            <div class="metric-label">Drive Hrs Today</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-drive-hrs-week">{{ '%dh %dm' % (week_stats.drive_hours|int, ((week_stats.drive_hours % 1) * 60)|int) }}</div>
+            <div class="metric-label">Drive Hrs Week</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-work-hrs-today">{{ '%dh %dm' % (today_stats.work_hours|int, ((today_stats.work_hours % 1) * 60)|int) }}</div>
+            <div class="metric-label">Work Hrs Today</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-work-hrs-week">{{ '%dh %dm' % (week_stats.work_hours|int, ((week_stats.work_hours % 1) * 60)|int) }}</div>
+            <div class="metric-label">Work Hrs Week</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-miles-today">{{ '%.2f' % today_stats.miles }}</div>
+            <div class="metric-label">Miles Today</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-miles-week">{{ '%.2f' % week_stats.miles }}</div>
+            <div class="metric-label">Miles Week</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-sph-today">{{ '%.2f' % today_stats.stops_per_hour }}</div>
+            <div class="metric-label">Stops/Hour Today</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" data-testid="text-sph-week">{{ '%.2f' % week_stats.stops_per_hour }}</div>
+            <div class="metric-label">Stops/Hour Week</div>
+        </div>
+    </div>
+
+    <!-- ── Next Stop ── -->
+    {% if next_stop %}
+    <div class="next-stop-card">
+        <div class="next-stop-header">Next Stop</div>
+        <div class="next-stop-body">
+            <div class="next-stop-info">
+                <strong data-testid="text-next-stop-order">{{ next_stop.order_number }}</strong>
+                {% if next_stop.pickup_address %}
+                <div class="text-muted small"><i class="bi bi-arrow-up-circle"></i> {{ next_stop.pickup_address }}</div>
+                {% endif %}
+                {% if next_stop.delivery_address %}
+                <div class="text-muted small"><i class="bi bi-arrow-down-circle"></i> {{ next_stop.delivery_address }}</div>
+                {% endif %}
             </div>
+            <div class="next-stop-actions">
+                <a href="{{ url_for('driver_portal.delivery_detail', delivery_id=next_stop.id) }}" class="btn btn-tf-primary btn-sm">View</a>
+                <form method="POST" action="{{ url_for('driver_portal.complete_stop') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="delivery_id" value="{{ next_stop.id }}">
+                    <input type="hidden" name="stop_type" value="delivery">
+                    <button type="submit" class="btn btn-tf-amber btn-sm" data-testid="btn-complete-stop-{{ next_stop.id }}">
+                        <i class="bi bi-check-lg"></i> Complete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Quick Actions: Stop / Mileage ── -->
+    <div class="quick-actions">
+        <div class="row g-2">
+            <div class="col-6">
+                <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#stopModal">
+                    <i class="bi bi-geo-alt"></i> Complete Stop
+                </button>
+            </div>
+            <div class="col-6">
+                <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#mileageModal">
+                    <i class="bi bi-speedometer2"></i> Log Mileage
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Messages ── -->
+    {% if unread_messages %}
+    <div class="messages-section">
+        <div class="messages-header">
+            <i class="bi bi-envelope-fill"></i> Dispatch Messages
+            <span class="badge bg-danger ms-1">{{ unread_messages|length }}</span>
+        </div>
+        <div class="messages-list">
+            {% for msg in recent_messages[:3] %}
+            <div class="message-item {% if not msg.is_read %}unread{% endif %} {% if msg.priority == 'urgent' %}urgent{% endif %}">
+                <div class="message-text">{{ msg.message }}</div>
+                <small class="text-muted">{{ msg.created_at.strftime('%b %d, %I:%M %p') }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('driver_portal.messages') }}" class="btn btn-sm btn-outline-secondary w-100 mt-2">View All Messages</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Stop Modal ── -->
+<div class="modal fade" id="stopModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Stop</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('driver_portal.complete_stop') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Stop Type</label>
+                        <select name="stop_type" class="form-select">
+                            <option value="delivery">Delivery</option>
+                            <option value="pickup">Pickup</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    {% if assigned %}
+                    <div class="mb-3">
+                        <label class="form-label">Linked Delivery (optional)</label>
+                        <select name="delivery_id" class="form-select">
+                            <option value="">— None —</option>
+                            {% for d in assigned %}
+                            <option value="{{ d.id }}">{{ d.order_number }} — {{ d.delivery_address or d.pickup_address or 'N/A' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-tf-primary">Complete Stop</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- ── Assigned Deliveries ── -->
-<div class="card">
-    <div class="card-header"><i class="bi bi-truck"></i> Assigned Deliveries</div>
-    <div class="card-body p-0">
-        {% if deliveries %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr>
-                        <th>Order #</th>
-                        <th>Pickup</th>
-                        <th>Delivery</th>
-                        <th>Status</th>
-                        <th>Medical</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in deliveries %}
-                    <tr data-testid="row-delivery-{{ d.id }}">
-                        <td><strong>{{ d.order_number }}</strong></td>
-                        <td>{{ d.pickup_address or '—' }}</td>
-                        <td>{{ d.delivery_address or '—' }}</td>
-                        <td><span class="badge badge-status badge-pending">{{ d.status }}</span></td>
-                        <td>{% if d.is_medical %}<i class="bi bi-heart-pulse-fill text-danger"></i>{% else %}—{% endif %}</td>
-                        <td class="text-end">
-                            <a href="{{ url_for('driver_portal.delivery_detail', delivery_id=d.id) }}" class="btn btn-sm btn-tf-primary" data-testid="link-view-delivery-{{ d.id }}">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- ── Mileage Modal ── -->
+<div class="modal fade" id="mileageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Mileage</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('driver_portal.log_mileage') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Start Odometer</label>
+                            <input type="number" name="start_odometer" class="form-control" step="0.1" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">End Odometer</label>
+                            <input type="number" name="end_odometer" class="form-control" step="0.1" required>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="log_date" class="form-control" value="{{ today.isoformat() }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-tf-primary">Log Mileage</button>
+                </div>
+            </form>
         </div>
-        {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-check-circle" style="font-size: 3rem; color: var(--tf-text-muted);"></i>
-            <h2 class="mt-3 text-muted">No active deliveries</h2>
-            <p class="text-muted">You're all caught up. New assignments will appear here.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endif %}

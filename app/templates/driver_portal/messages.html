@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Messages — Triple Force Logistic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="page-title mb-0">Messages</h1>
+        <p class="page-subtitle">Dispatch messages and alerts</p>
+    </div>
+    <a href="{{ url_for('driver_portal.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% if messages %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-envelope-fill"></i> All Messages</span>
+        <span class="badge bg-secondary">{{ messages|length }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            {% for msg in messages %}
+            <div class="list-group-item {% if not msg.is_read %}list-group-item-warning{% endif %} d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi {% if msg.priority == 'urgent' %}bi-exclamation-triangle-fill text-danger{% else %}bi-person-circle text-muted{% endif %}"></i>
+                        <strong>{{ msg.sender.full_name or msg.sender.email if msg.sender else 'Dispatch' }}</strong>
+                        <span class="badge badge-status {% if msg.priority == 'urgent' %}badge-cancelled{% else %}badge-new{% endif %}" style="font-size:0.7rem;">
+                            {{ msg.priority|capitalize }}
+                        </span>
+                        {% if not msg.is_read %}
+                        <span class="badge bg-danger" style="font-size:0.65rem;">Unread</span>
+                        {% endif %}
+                    </div>
+                    <p class="mb-1 {% if msg.priority == 'urgent' %}text-danger{% endif %}">{{ msg.message }}</p>
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i> {{ msg.created_at|datetime }}
+                    </small>
+                </div>
+                {% if not msg.is_read %}
+                <div>
+                    <form method="POST" action="{{ url_for('driver_portal.mark_message_read', message_id=msg.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-tf-primary">
+                            <i class="bi bi-check2"></i> Mark as Read
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center p-5">
+    <i class="bi bi-inbox" style="font-size:3rem;color:var(--tf-text-light);"></i>
+    <p class="text-muted mt-2 mb-0">No messages yet.</p>
+    <a href="{{ url_for('driver_portal.dashboard') }}" class="btn btn-tf-primary mt-3">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endif %}
+{% endblock %}

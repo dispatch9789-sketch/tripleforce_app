@@ -28,7 +28,8 @@
     </div>
     <nav class="sidebar-nav">
         {% if current_user.role == 'driver' %}
-        <a href="{{ url_for('driver_portal.dashboard') }}" class="sidebar-link {% if request.endpoint == 'driver_portal.dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i> My Deliveries</a>
+        <a href="{{ url_for('driver_portal.dashboard') }}" class="sidebar-link {% if request.endpoint == 'driver_portal.dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i> Driver Dashboard</a>
+        <a href="{{ url_for('driver_portal.messages') }}" class="sidebar-link {% if request.endpoint == 'driver_portal.messages' %}active{% endif %}"><i class="bi bi-envelope-fill"></i> Messages</a>
         {% else %}
         <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
         <a href="{{ url_for('customers.index') }}" class="sidebar-link {% if request.blueprint == 'customers' %}active{% endif %}"><i class="bi bi-people-fill"></i> Customers</a>
@@ -36,6 +37,7 @@
         <a href="{{ url_for('quotes.calculator') }}" class="sidebar-link {% if request.endpoint == 'quotes.calculator' %}active{% endif %}"><i class="bi bi-calculator-fill"></i> Quote Calculator</a>
         <a href="{{ url_for('quotes.index') }}" class="sidebar-link {% if request.endpoint in ['quotes.index', 'quotes.detail'] %}active{% endif %}"><i class="bi bi-file-text-fill"></i> Quotes</a>
         <a href="{{ url_for('dispatch.board') }}" class="sidebar-link {% if request.blueprint == 'dispatch' %}active{% endif %}"><i class="bi bi-clipboard-check-fill"></i> Dispatch</a>
+        <a href="{{ url_for('driver_ops.overview') }}" class="sidebar-link {% if request.blueprint == 'driver_ops' %}active{% endif %}"><i class="bi bi-person-badge-fill"></i> Driver Operations</a>
         <a href="{{ url_for('invoices.index') }}" class="sidebar-link {% if request.blueprint == 'invoices' %}active{% endif %}"><i class="bi bi-receipt-fill"></i> Invoices</a>
         <a href="{{ url_for('reports.index') }}" class="sidebar-link {% if request.blueprint == 'reports' %}active{% endif %}"><i class="bi bi-bar-chart-line-fill"></i> Revenue</a>
         <a href="{{ url_for('reminders.index') }}" class="sidebar-link {% if request.blueprint == 'reminders' %}active{% endif %}"><i class="bi bi-bell-fill"></i> Reminders</a>

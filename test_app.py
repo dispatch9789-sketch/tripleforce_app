@@ -121,12 +121,12 @@ with app.test_client() as c:
     print("\n[6] Driver Login & Access")
     r = login(c, "mike@tripleforcelogistic.com", "ChangeMe123!")
     test("Driver login succeeds", r.status_code == 200)
-    test("Driver redirected to portal", b"My Deliveries" in r.data or b"driver" in r.data.lower() or b"Assigned Deliveries" in r.data)
+    test("Driver redirected to portal", b"Driver Dashboard" in r.data or b"driver" in r.data.lower() or b"Dashboard" in r.data)
 
     # Driver can access their portal
     r = c.get("/driver/")
     test("Driver can access own portal", r.status_code == 200, f"got {r.status_code}")
-    test("Driver portal shows deliveries", b"My Deliveries" in r.data or b"Assigned Deliveries" in r.data)
+    test("Driver portal shows dashboard", b"Driver Dashboard" in r.data or b"Stops Completed" in r.data or b"Clock In" in r.data)
 
     # Driver should see the sample delivery
     r = c.get("/driver/deliveries/1")
@@ -226,7 +226,7 @@ with app.test_client() as c:
     # Driver should NOT see User Management or Settings
     login(c, "mike@tripleforcelogistic.com", "ChangeMe123!")
     r = c.get("/driver/")
-    test("Driver sidebar has My Deliveries link", b"My Deliveries" in r.data)
+    test("Driver sidebar has Driver Dashboard link", b"Driver Dashboard" in r.data)
     test("Driver sidebar does NOT have User Management", b"User Management" not in r.data)
     test("Driver sidebar does NOT have Settings", b"Settings" not in r.data)
     test("Driver sidebar does NOT have Customers", b">Customers<" not in r.data)

@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}Driver Detail — Triple Force Logistic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+        <h1 class="page-title mb-0">{{ driver.name }}</h1>
+        <p class="page-subtitle">
+            <span class="badge badge-status
+                {% if status == 'Off Duty' %}badge-new
+                {% elif status == 'On Break' %}badge-pending
+                {% elif status == 'On Route' %}badge-progress
+                {% elif status == 'Route Completed' %}badge-scheduled
+                {% else %}badge-accepted{% endif %}">{{ status }}</span>
+            {% if driver.phone %}<span class="ms-2"><i class="bi bi-telephone"></i> {{ driver.phone }}</span>{% endif %}
+            {% if driver.email %}<span class="ms-2"><i class="bi bi-envelope"></i> {{ driver.email }}</span>{% endif %}
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('driver_ops.overview') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Overview
+        </a>
+        <a href="{{ url_for('driver_ops.driver_history', driver_id=driver.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-calendar3"></i> History
+        </a>
+        <a href="{{ url_for('driver_ops.audit_trail', driver_id=driver.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-shield-check"></i> Audit Trail
+        </a>
+    </div>
+</div>
+
+<!-- ── Stat Cards: Today ── -->
+<h6 class="text-muted text-uppercase mb-2" style="font-size:0.75rem;letter-spacing:0.05em;">Today's Stats</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Stops</div>
+            <div class="stat-value">{{ today_stats.stops }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Deliveries</div>
+            <div class="stat-value">{{ today_stats.deliveries }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Pickups</div>
+            <div class="stat-value">{{ today_stats.pickups }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Work Hours</div>
+            <div class="stat-value">{{ '%dh %dm' % (today_stats.work_hours|int, ((today_stats.work_hours % 1) * 60)|int) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Drive Hours</div>
+            <div class="stat-value">{{ '%dh %dm' % (today_stats.drive_hours|int, ((today_stats.drive_hours % 1) * 60)|int) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Miles</div>
+            <div class="stat-value">{{ '%.1f' % today_stats.miles }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Stat Cards: Week ── -->
+<h6 class="text-muted text-uppercase mb-2" style="font-size:0.75rem;letter-spacing:0.05em;">Week-to-Date Stats</h6>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Stops</div>
+            <div class="stat-value">{{ week_stats.stops }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Deliveries</div>
+            <div class="stat-value">{{ week_stats.deliveries }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Pickups</div>
+            <div class="stat-value">{{ week_stats.pickups }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Work Hours</div>
+            <div class="stat-value">{{ '%dh %dm' % (week_stats.work_hours|int, ((week_stats.work_hours % 1) * 60)|int) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Drive Hours</div>
+            <div class="stat-value">{{ '%dh %dm' % (week_stats.drive_hours|int, ((week_stats.drive_hours % 1) * 60)|int) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-lg">
+        <div class="stat-card">
+            <div class="stat-label">Miles</div>
+            <div class="stat-value">{{ '%.1f' % week_stats.miles }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- ── Left Column ── -->
+    <div class="col-lg-8">
+        <!-- ── Assigned Deliveries ── -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clipboard-check-fill"></i> Assigned Deliveries</span>
+                {% if assigned %}<span class="badge bg-secondary">{{ assigned|length }}</span>{% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if assigned %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Route</th>
+                                <th>Pickup Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in assigned %}
+                            <tr>
+                                <td><strong>{{ d.order_number }}</strong></td>
+                                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    {{ d.pickup_address or '—' }} <i class="bi bi-arrow-right-short"></i> {{ d.delivery_address or '—' }}
+                                </td>
+                                <td>{{ d.pickup_datetime|datetime if d.pickup_datetime else '—' }}</td>
+                                <td>
+                                    <span class="badge badge-status
+                                        {% if d.status == 'Completed' %}badge-completed
+                                        {% elif d.status == 'Delivered' %}badge-delivered
+                                        {% elif d.status == 'Cancelled' %}badge-cancelled
+                                        {% elif d.status in ['En Route to Pickup', 'In Transit', 'Picked Up', 'Arrived at Pickup', 'Arrived at Delivery'] %}badge-progress
+                                        {% elif d.status == 'Scheduled' %}badge-scheduled
+                                        {% elif d.status in ['Driver Assigned', 'Confirmed'] %}badge-accepted
+                                        {% else %}badge-new{% endif %}">{{ d.status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="bi bi-inbox" style="font-size:2rem;color:var(--tf-text-light);"></i>
+                    <p class="text-muted mt-2 mb-0">No assigned deliveries.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Recent Stops ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-geo-alt-fill"></i> Recent Stops</div>
+            <div class="card-body p-0">
+                {% if recent_stops %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Delivery</th>
+                                <th>Completed</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stop in recent_stops %}
+                            <tr>
+                                <td>
+                                    <span class="badge badge-status
+                                        {% if stop.stop_type == 'delivery' %}badge-delivered
+                                        {% elif stop.stop_type == 'pickup' %}badge-accepted
+                                        {% else %}badge-new{% endif %}" style="text-transform:capitalize;">{{ stop.stop_type }}</span>
+                                </td>
+                                <td>
+                                    {% if stop.delivery_id %}
+                                    <a href="{{ url_for('driver_portal.delivery_detail', delivery_id=stop.delivery_id) }}">
+                                        {{ stop.delivery.order_number if stop.delivery else '—' }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ stop.completed_at|datetime }}</td>
+                                <td>{{ stop.notes or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="bi bi-clock-history" style="font-size:2rem;color:var(--tf-text-light);"></i>
+                    <p class="text-muted mt-2 mb-0">No recent stops.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Checklist Completion ── -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Daily Checklist</span>
+                {% set completed = 0 %}
+                {% for item in checklist_items %}
+                    {% set resp = checklist_responses.get(item.id) %}
+                    {% if resp and resp.is_completed %}{% set completed = completed + 1 %}{% endif %}
+                {% endfor %}
+                <span class="badge bg-secondary">{{ completed }}/{{ checklist_items|length }} Completed</span>
+            </div>
+            <div class="card-body">
+                {% if checklist_items %}
+                <ul class="list-unstyled mb-0">
+                    {% for item in checklist_items %}
+                    {% set resp = checklist_responses.get(item.id) %}
+                    <li class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom">
+                        <i class="bi {% if resp and resp.is_completed %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %}"></i>
+                        <span>{{ item.label }}</span>
+                        {% if resp and resp.completed_at %}
+                        <small class="text-muted ms-auto">{{ resp.completed_at|datetime }}</small>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No checklist items configured.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Recent Messages ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-envelope-fill"></i> Recent Messages</div>
+            <div class="card-body p-0">
+                {% if messages %}
+                <div class="list-group list-group-flush">
+                    {% for msg in messages %}
+                    <div class="list-group-item {% if not msg.is_read %}list-group-item-warning{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <strong>{{ msg.sender.full_name or msg.sender.email if msg.sender else 'Dispatch' }}</strong>
+                                    <span class="badge badge-status {% if msg.priority == 'urgent' %}badge-cancelled{% else %}badge-new{% endif %}" style="font-size:0.65rem;">{{ msg.priority|capitalize }}</span>
+                                </div>
+                                <p class="mb-0 small">{{ msg.message }}</p>
+                            </div>
+                            <small class="text-muted">{{ msg.created_at|datetime }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="bi bi-inbox" style="font-size:2rem;color:var(--tf-text-light);"></i>
+                    <p class="text-muted mt-2 mb-0">No messages.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right Column: Action Forms ── -->
+    <div class="col-lg-4">
+        <!-- ── Send Message ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-send-fill"></i> Send Message</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('driver_ops.send_message', driver_id=driver.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea name="message" class="form-control" rows="3" placeholder="Type your message..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select name="priority" class="form-select">
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-tf-primary w-100">
+                        <i class="bi bi-send"></i> Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Assign Delivery ── -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-plus-circle-fill"></i> Assign Delivery</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('driver_ops.assign_route', driver_id=driver.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Unassigned Delivery</label>
+                        <select name="delivery_id" class="form-select" required>
+                            <option value="">— Select a delivery —</option>
+                            {% for d in unassigned_deliveries %}
+                            <option value="{{ d.id }}">{{ d.order_number }} — {{ d.delivery_address or d.pickup_address or 'N/A' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-tf-amber w-100">
+                        <i class="bi bi-plus-lg"></i> Assign to {{ driver.name }}
+                    </button>
+                </form>
+                {% if not unassigned_deliveries %}
+                <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> No unassigned deliveries available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Make Correction ── -->
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pencil-square"></i> Make Correction</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('driver_ops.correct_entry', driver_id=driver.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Correction Type</label>
+                        <select name="correction_type" class="form-select" required>
+                            <option value="">— Select type —</option>
+                            <option value="clock_in">Clock In</option>
+                            <option value="clock_out">Clock Out</option>
+                            <option value="break">Break</option>
+                            <option value="route">Route</option>
+                            <option value="stop">Stop</option>
+                            <option value="mileage">Mileage</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="What is being corrected?" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <input type="text" name="reason" class="form-control" placeholder="Why is this correction needed?" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Old Value</label>
+                        <input type="text" name="old_value" class="form-control" placeholder="Original value (optional)">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Value</label>
+                        <input type="text" name="new_value" class="form-control" placeholder="Corrected value (optional)">
+                    </div>
+                    <button type="submit" class="btn btn-tf-primary w-100">
+                        <i class="bi bi-check2-circle"></i> Record Correction
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

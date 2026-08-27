@@ -81,6 +81,7 @@ PROTECTED_GET_ROUTES = [
     "/outreach/",
     "/outreach/new",
     "/driver/",
+    "/driver-ops/",
 ]
 
 # Admin-only GET routes (admin_required). A dispatcher must get 403.

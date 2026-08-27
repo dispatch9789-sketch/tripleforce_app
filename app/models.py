@@ -745,3 +745,189 @@ class Prospect(db.Model):
         if org and website:
             return f"{org}|{website}"
         return org or None
+
+
+# ═══════════════════════════════════════════════════════════════
+#  DRIVER DASHBOARD — Work sessions, routes, stops, checklist, messages
+#  All tables below are ADDITIVE. No existing table is altered.
+# ═══════════════════════════════════════════════════════════════
+
+# Default checklist items seeded on first run
+DEFAULT_CHECKLIST_ITEMS = [
+    "Vehicle condition checked",
+    "Fuel level checked",
+    "Tires and lights checked",
+    "Required supplies/equipment present",
+    "Phone charged and route ready",
+]
+
+
+class DriverWorkSession(db.Model):
+    """A driver's work session (clock-in to clock-out).
+
+    Stores timestamps server-side so calculations are not dependent on the
+    phone screen remaining open.  ``status`` tracks the driver's current
+    state: clocked_in, on_break, on_route, route_completed, off_duty.
+    """
+    __tablename__ = "driver_work_sessions"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    clock_in_time = db.Column(db.DateTime, nullable=False)
+    clock_out_time = db.Column(db.DateTime)  # NULL = still clocked in
+    status = db.Column(db.String(20), default="clocked_in", index=True)  # clocked_in, on_break, on_route, route_completed, off_duty
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+    user = db.relationship("User", foreign_keys=[user_id])
+    breaks = db.relationship("DriverBreak", back_populates="work_session", cascade="all, delete-orphan")
+    route_sessions = db.relationship("DriverRouteSession", back_populates="work_session", cascade="all, delete-orphan")
+    stop_events = db.relationship("DriverStopEvent", back_populates="work_session", cascade="all, delete-orphan")
+
+
+class DriverBreak(db.Model):
+    """A break period within a work session."""
+    __tablename__ = "driver_breaks"
+    id = db.Column(db.Integer, primary_key=True)
+    work_session_id = db.Column(db.Integer, db.ForeignKey("driver_work_sessions.id"), nullable=False, index=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime)  # NULL = still on break
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    work_session = db.relationship("DriverWorkSession", back_populates="breaks")
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+
+
+class DriverRouteSession(db.Model):
+    """A route session (start-route to end-route) within a work session."""
+    __tablename__ = "driver_route_sessions"
+    id = db.Column(db.Integer, primary_key=True)
+    work_session_id = db.Column(db.Integer, db.ForeignKey("driver_work_sessions.id"), nullable=False, index=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime)  # NULL = route still active
+    start_odometer = db.Column(db.Float)
+    end_odometer = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    work_session = db.relationship("DriverWorkSession", back_populates="route_sessions")
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+    stop_events = db.relationship("DriverStopEvent", back_populates="route_session")
+
+
+class DriverStopEvent(db.Model):
+    """A completed stop within a route (delivery, pickup, or other)."""
+    __tablename__ = "driver_stop_events"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    work_session_id = db.Column(db.Integer, db.ForeignKey("driver_work_sessions.id"), nullable=False, index=True)
+    route_session_id = db.Column(db.Integer, db.ForeignKey("driver_route_sessions.id"), nullable=True, index=True)
+    delivery_id = db.Column(db.Integer, db.ForeignKey("deliveries.id"), nullable=True)
+    stop_type = db.Column(db.String(20), nullable=False)  # delivery, pickup, other
+    completed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    work_session = db.relationship("DriverWorkSession", back_populates="stop_events")
+    route_session = db.relationship("DriverRouteSession", back_populates="stop_events")
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+
+
+class DriverMileageLog(db.Model):
+    """Odometer entries for mileage tracking."""
+    __tablename__ = "driver_mileage_logs"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    route_session_id = db.Column(db.Integer, db.ForeignKey("driver_route_sessions.id"), nullable=True)
+    log_date = db.Column(db.Date, nullable=False, index=True)
+    start_odometer = db.Column(db.Float)
+    end_odometer = db.Column(db.Float)
+    miles = db.Column(db.Float)
+    source = db.Column(db.String(20), default="manual")  # manual, gps, route_api
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+
+
+class ChecklistItem(db.Model):
+    """Admin-editable checklist definitions."""
+    __tablename__ = "checklist_items"
+    id = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(255), nullable=False)
+    sort_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ChecklistResponse(db.Model):
+    """Driver responses to checklist items for a specific date."""
+    __tablename__ = "checklist_responses"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    checklist_item_id = db.Column(db.Integer, db.ForeignKey("checklist_items.id"), nullable=False)
+    response_date = db.Column(db.Date, nullable=False, index=True)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("driver_id", "checklist_item_id", "response_date", name="uq_checklist_response"),
+    )
+
+
+class DriverMessage(db.Model):
+    """Dispatch-to-driver messages and alerts."""
+    __tablename__ = "driver_messages"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    priority = db.Column(db.String(20), default="normal")  # normal, urgent
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+    sender = db.relationship("User", foreign_keys=[sender_id])
+
+
+class DriverCorrection(db.Model):
+    """Audit trail for dispatch/admin corrections to driver data."""
+    __tablename__ = "driver_corrections"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    corrected_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    correction_type = db.Column(db.String(50), nullable=False)  # clock_in, clock_out, break, route, stop, mileage
+    description = db.Column(db.Text, nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    old_value = db.Column(db.Text)
+    new_value = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    driver = db.relationship("Driver", foreign_keys=[driver_id])
+    corrector = db.relationship("User", foreign_keys=[corrected_by])
+
+
+class DriverWeeklySummary(db.Model):
+    """Historical weekly summaries (retained for at least 42 weeks)."""
+    __tablename__ = "driver_weekly_summaries"
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey("drivers.id"), nullable=False, index=True)
+    week_start = db.Column(db.Date, nullable=False, index=True)
+    week_end = db.Column(db.Date, nullable=False)
+    total_work_hours = db.Column(db.Float, default=0.0)
+    total_drive_hours = db.Column(db.Float, default=0.0)
+    total_miles = db.Column(db.Float, default=0.0)
+    total_stops = db.Column(db.Integer, default=0)
+    total_deliveries = db.Column(db.Integer, default=0)
+    total_pickups = db.Column(db.Integer, default=0)
+    stops_per_hour = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("driver_id", "week_start", name="uq_weekly_summary"),
+    )

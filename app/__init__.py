@@ -43,6 +43,7 @@ def create_app(config_class=Config):
     from app.reminders.routes import reminders
     from app.users.routes import users
     from app.driver_portal.routes import driver_portal
+    from app.driver_ops.routes import driver_ops
     from app.outreach.routes import outreach, register_cli as register_outreach_cli
     from app.public_request.routes import public
 
@@ -56,6 +57,7 @@ def create_app(config_class=Config):
     app.register_blueprint(reminders, url_prefix="/reminders")
     app.register_blueprint(users, url_prefix="/users")
     app.register_blueprint(driver_portal, url_prefix="/driver")
+    app.register_blueprint(driver_ops, url_prefix="/driver-ops")
     app.register_blueprint(outreach, url_prefix="/outreach")
     app.register_blueprint(public)  # public customer-facing pages (/request-pickup)
 
@@ -85,8 +87,9 @@ def create_app(config_class=Config):
     # db.create_all() does not add columns to existing tables. This
     # idempotent ALTER TABLE pass makes new customer-form fields persist on
     # already-deployed databases without losing existing data.
-    from app.schema_migrations import ensure_delivery_columns
+    from app.schema_migrations import ensure_delivery_columns, seed_checklist_items
     ensure_delivery_columns(app, db)
+    seed_checklist_items(app, db)
 
     # ── No-cache headers for authenticated staff pages ──
     # Prevents the browser Back button from revealing usable staff pages

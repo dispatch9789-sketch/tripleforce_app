@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Driver Operations — Triple Force Logistic{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Driver Operations</h1>
+<p class="page-subtitle">Monitor all active drivers, routes, and daily performance metrics</p>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill"></i> All Drivers</span>
+        <span class="badge bg-secondary">{{ driver_data|length }} Active</span>
+    </div>
+    <div class="card-body p-0">
+        {% if driver_data %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Driver</th>
+                        <th>Status</th>
+                        <th class="text-center">Stops</th>
+                        <th class="text-center">Deliveries</th>
+                        <th class="text-center">Pickups</th>
+                        <th class="text-center">Work Hrs</th>
+                        <th class="text-center">Drive Hrs</th>
+                        <th class="text-center">Miles</th>
+                        <th>Next Delivery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in driver_data %}
+                    {% set d = item.driver %}
+                    {% set ts = item.today %}
+                    {% set nd = item.next_delivery %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('driver_ops.driver_detail', driver_id=d.id) }}">
+                                <strong>{{ d.name }}</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge badge-status
+                                {% if item.status == 'Off Duty' %}badge-new
+                                {% elif item.status == 'On Break' %}badge-pending
+                                {% elif item.status == 'On Route' %}badge-progress
+                                {% elif item.status == 'Route Completed' %}badge-scheduled
+                                {% else %}badge-accepted{% endif %}">{{ item.status }}</span>
+                        </td>
+                        <td class="text-center">{{ ts.stops }}</td>
+                        <td class="text-center">{{ ts.deliveries }}</td>
+                        <td class="text-center">{{ ts.pickups }}</td>
+                        <td class="text-center">{{ '%dh %dm' % (ts.work_hours|int, ((ts.work_hours % 1) * 60)|int) }}</td>
+                        <td class="text-center">{{ '%dh %dm' % (ts.drive_hours|int, ((ts.drive_hours % 1) * 60)|int) }}</td>
+                        <td class="text-center">{{ '%.1f' % ts.miles }}</td>
+                        <td>
+                            {% if nd %}
+                            <a href="{{ url_for('driver_ops.driver_detail', driver_id=d.id) }}" class="text-decoration-none">
+                                <strong>{{ nd.order_number }}</strong>
+                            </a>
+                            <div class="text-muted small">{{ nd.delivery_address or nd.pickup_address or '—' }}</div>
+                            {% if nd.pickup_datetime %}
+                            <small class="text-muted"><i class="bi bi-clock"></i> {{ nd.pickup_datetime|datetime }}</small>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="bi bi-people" style="font-size:2.5rem;color:var(--tf-text-light);"></i>
+            <p class="text-muted mt-2 mb-0">No active drivers found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
