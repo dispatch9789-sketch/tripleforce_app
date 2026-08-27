@@ -76,7 +76,7 @@
                 {% if not active_route and session %}
                 <form method="POST" action="{{ url_for('driver_portal.start_route') }}" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="number" name="start_odometer" placeholder="Start odometer" class="form-control form-control-sm d-inline-block" style="width: 120px;" step="0.1">
+                    <input type="number" name="start_odometer" placeholder="Odometer" class="form-control form-control-sm d-inline-block" style="width: 140px;" step="0.1">
                     <button type="submit" class="btn btn-tf-primary btn-sm" data-testid="btn-start-route">Start Route</button>
                 </form>
                 {% elif active_route %}
