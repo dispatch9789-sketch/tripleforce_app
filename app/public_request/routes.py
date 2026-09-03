@@ -4,6 +4,8 @@ These routes are intentionally separate from the staff `main`/`dispatch`
 blueprints so they never inherit the internal sidebar or admin navigation,
 regardless of whether a staff member happens to be logged in.
 """
+from datetime import datetime
+
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for, current_app,
 )
@@ -45,6 +47,21 @@ def request_pickup():
     if form.validate_on_submit():
         order_number = get_next_order_number()
 
+        pickup_datetime = None
+        pickup_date = (form.pickup_date.data or "").strip()
+        pickup_time = (form.pickup_time.data or "").strip()
+        if pickup_date:
+            if pickup_time:
+                try:
+                    pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M")
+                except ValueError:
+                    pickup_datetime = None
+            else:
+                try:
+                    pickup_datetime = datetime.strptime(pickup_date, "%Y-%m-%d")
+                except ValueError:
+                    pickup_datetime = None
+
         # Build a structured "requested by" block so dispatch can see who
         # placed the request even though there is no logged-in user.
         requested_by = "Requested by: {} | Phone: {}".format(
@@ -72,7 +89,7 @@ def request_pickup():
             pickup_contact_phone=form.pickup_contact_phone.data or None,
             pickup_address=form.pickup_address.data,
             pickup_instructions=form.pickup_instructions.data,
-            pickup_datetime=form.pickup_datetime.data,
+            pickup_datetime=pickup_datetime,
             delivery_contact=form.delivery_contact.data or form.requester_name.data,
             delivery_contact_phone=form.delivery_contact_phone.data or None,
             delivery_address=form.delivery_address.data,
