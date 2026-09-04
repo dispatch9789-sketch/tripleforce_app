@@ -15,6 +15,7 @@ Verifies:
 import os
 import sys
 import tempfile
+from datetime import datetime
 
 # Isolated temp DB (do NOT touch the committed tripleforce.db)
 _TMP_DB = "sqlite:///" + tempfile.mktemp(suffix=".db")
@@ -64,10 +65,10 @@ def main():
     if r.status_code != 200:
         failures.append(f"GET returned {r.status_code}, expected 200")
     expected_fields = [
-        "company_facility_name", "pickup_contact_phone", "delivery_contact_phone",
-        "delivery_type", "delivery_type_other", "trip_type", "package_weight",
-        "package_size", "reference_number", "is_recurring", "recurring_route_notes",
-        "requested_delivery_deadline", "temperature_requirement",
+        "company_facility_name", "pickup_date", "pickup_time", "pickup_contact_phone",
+        "delivery_contact_phone", "delivery_type", "delivery_type_other", "trip_type",
+        "package_weight", "package_size", "reference_number", "is_recurring",
+        "recurring_route_notes", "requested_delivery_deadline", "temperature_requirement",
     ]
     for f in expected_fields:
         if f'name="{f}"' not in body:
@@ -108,7 +109,8 @@ def main():
         "pickup_contact_phone": "(555) 222-4444",
         "pickup_address": "123 Main St, New York, NY 10001",
         "pickup_instructions": "Loading dock B, call upon arrival",
-        "pickup_datetime": "2026-08-24T09:00",
+        "pickup_date": "2026-08-24",
+        "pickup_time": "09:00",
         "delivery_contact": "Dr. Smith",
         "delivery_contact_phone": "(555) 222-5555",
         "delivery_address": "456 Health Ave, New York, NY 10002",
@@ -166,6 +168,8 @@ def main():
                 failures.append(f"service_type={created.service_type}, expected 'Rush'")
             if created.is_recurring is not True:
                 failures.append(f"is_recurring={created.is_recurring}, expected True")
+            if created.pickup_datetime != datetime(2026, 8, 24, 9, 0):
+                failures.append(f"pickup_datetime={created.pickup_datetime!r}, expected 2026-08-24 09:00")
             if created.delivery_deadline is None:
                 failures.append("requested_delivery_deadline (delivery_deadline) not persisted")
             delivery_id = created.id

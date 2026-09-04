@@ -59,10 +59,15 @@
                 {{ form.pickup_address(class="form-control", placeholder="Street address, city, state, ZIP") }}
                 {% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
             </div>
-            <div class="col-md-4">
-                {{ form.pickup_datetime.label(class="form-label") }}
-                {{ form.pickup_datetime(class="form-control") }}
-                {% for e in form.pickup_datetime.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            <div class="col-md-3">
+                {{ form.pickup_date.label(class="form-label") }}
+                {{ form.pickup_date(class="form-control", type="date") }}
+                {% for e in form.pickup_date.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-3">
+                {{ form.pickup_time.label(class="form-label") }}
+                {{ form.pickup_time(class="form-control", type="time") }}
+                {% for e in form.pickup_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
             </div>
             <div class="col-md-6">
                 {{ form.pickup_contact.label(class="form-label") }}

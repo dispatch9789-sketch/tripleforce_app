@@ -10,6 +10,7 @@ Verifies:
 """
 import os
 import tempfile
+from datetime import datetime
 
 # Use a clean temp SQLite DB so we don't touch the committed tripleforce.db
 os.environ["DATABASE_URL"] = "sqlite:///" + tempfile.mktemp(suffix=".db")
@@ -59,6 +60,10 @@ def main():
         failures.append("GET page missing requester_name field")
     if 'name="pickup_address"' not in body:
         failures.append("GET page missing pickup_address field")
+    if 'name="pickup_date"' not in body:
+        failures.append("GET page missing pickup_date field")
+    if 'name="pickup_time"' not in body:
+        failures.append("GET page missing pickup_time field")
     if 'name="delivery_address"' not in body:
         failures.append("GET page missing delivery_address field")
     if "Request Pickup" not in body:
@@ -85,7 +90,8 @@ def main():
         "pickup_contact": "Front Desk",
         "pickup_address": "123 Main St, New York, NY 10001",
         "pickup_instructions": "Loading dock B",
-        "pickup_datetime": "2026-08-24T09:00",
+        "pickup_date": "2026-08-24",
+        "pickup_time": "09:00",
         "delivery_contact": "Dr. Smith",
         "delivery_address": "456 Health Ave, New York, NY 10002",
         "delivery_instructions": "Lab window",
@@ -131,6 +137,8 @@ def main():
                 failures.append("pickup_address not persisted correctly")
             if created.is_medical is not True:
                 failures.append("is_medical not persisted correctly")
+            if created.pickup_datetime != datetime(2026, 8, 24, 9, 0):
+                failures.append(f"pickup_datetime={created.pickup_datetime!r}, expected 2026-08-24 09:00")
             # Status history should mirror the staff route for timeline consistency
             hist = created.status_history or []
             print(f"[DB] status_history rows={len(hist)} first={hist[0].status if hist else None} "

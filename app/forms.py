@@ -195,7 +195,8 @@ class CustomerPickupRequestForm(FlaskForm):
     pickup_contact_phone = StringField("Pickup Contact Phone", validators=[Optional(), Length(max=50)])
     pickup_address = StringField("Pickup Address", validators=[DataRequired(), Length(max=500)])
     pickup_instructions = TextAreaField("Pickup Instructions", validators=[Optional(), Length(max=2000)])
-    pickup_datetime = DateTimeField("Requested Pickup Date & Time", format="%Y-%m-%dT%H:%M", validators=[Optional()])
+    pickup_date = StringField("Pickup Date", validators=[Optional()])
+    pickup_time = StringField("Pickup Time", validators=[Optional()])
 
     # Delivery details
     delivery_contact = StringField("Delivery Contact Name", validators=[Optional(), Length(max=200)])
