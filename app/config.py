@@ -15,11 +15,11 @@ class Config:
     PERMANENT_SESSION_LIFETIME = 28800  # 8 hours
 
     # ── Database ──
-    db_url = os.environ.get("DATABASE_URL", "sqlite:///tripleforce.db")
-    if db_url.startswith("sqlite"):
-        SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "tripleforce.db")
-    else:
-        SQLALCHEMY_DATABASE_URI = db_url
+    db_url = os.environ.get("DATABASE_URL") or os.environ.get("database_url") or "sqlite:///tripleforce.db"
+    # Railway may expose PostgreSQL URLs with the legacy postgres scheme.
+    if db_url.startswith("postgres://"):
+        db_url = "postgresql://" + db_url[len("postgres://"):]
+    SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 

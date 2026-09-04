@@ -190,6 +190,26 @@ def main():
     with client.session_transaction() as sess:
         sess["_user_id"] = str(uid)
         sess["_fresh"] = True
+
+    # ── 6. Staff can see the website request on both operational views ──
+    r = client.get("/dashboard")
+    dashboard_body = r.get_data(as_text=True)
+    print(f"[GET /dashboard as staff] status={r.status_code}")
+    if r.status_code != 200:
+        failures.append(f"Staff dashboard returned {r.status_code}, expected 200")
+    for value in ("New Pickup Requests", "TF-", "NYC Lab", "Front Desk"):
+        if value not in dashboard_body:
+            failures.append(f"Staff dashboard missing public request value: {value}")
+
+    r = client.get("/dispatch/?status=New+Request")
+    dispatch_body = r.get_data(as_text=True)
+    print(f"[GET /dispatch/ as staff] status={r.status_code}")
+    if r.status_code != 200:
+        failures.append(f"Staff dispatch board returned {r.status_code}, expected 200")
+    for value in ("Website Request", "NYC Lab", "Front Desk"):
+        if value not in dispatch_body:
+            failures.append(f"Dispatch board missing public request value: {value}")
+
     r = client.get("/request-pickup")
     body = r.get_data(as_text=True)
     found_markers = [m for m in SIDEBAR_MARKERS if m in body]

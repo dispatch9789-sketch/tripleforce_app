@@ -36,6 +36,36 @@
     </div>
 </div>
 
+<!-- ── New Website Pickup Requests ── -->
+<div class="card mb-4 border-warning">
+    <div class="card-header d-flex justify-content-between align-items-center bg-warning bg-opacity-10">
+        <span><i class="bi bi-globe2"></i> New Pickup Requests</span>
+        <a href="{{ url_for('dispatch.board', status='New Request') }}" class="btn btn-sm btn-outline-warning">View on Dispatch Board</a>
+    </div>
+    <div class="card-body p-0">
+        {% if new_pickup_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead><tr><th>Order #</th><th>Facility</th><th>Pickup Contact</th><th>Pickup Address</th><th>Received</th></tr></thead>
+                <tbody>
+                    {% for d in new_pickup_requests %}
+                    <tr>
+                        <td><a href="{{ url_for('dispatch.detail', delivery_id=d.id) }}"><strong>{{ d.order_number }}</strong></a></td>
+                        <td>{{ d.company_facility_name or d.pickup_facility or '—' }}</td>
+                        <td>{{ d.pickup_contact or '—' }}{% if d.pickup_contact_phone %}<small class="d-block text-muted">{{ d.pickup_contact_phone }}</small>{% endif %}</td>
+                        <td>{{ d.pickup_address or '—' }}</td>
+                        <td>{{ d.created_at | datetime }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted p-3 mb-0">No new website pickup requests.</p>
+        {% endif %}
+    </div>
+</div>
+
 <!-- ── Revenue Cards ── -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4">

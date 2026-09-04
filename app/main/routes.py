@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models import (
-    Customer, Quote, Delivery, Invoice, Payment, Reminder,
+    Customer, Quote, Delivery, DeliveryStatusHistory, Invoice, Payment, Reminder,
     CompanySettings, PricingSettings, EmailTemplate, Driver, Expense,
     DELIVERY_STATUSES, EMAIL_TEMPLATE_TYPES,
 )
@@ -74,6 +74,11 @@ def dashboard():
     # Recent activity
     recent_customers = Customer.query.order_by(Customer.updated_at.desc()).limit(5).all()
     recent_deliveries = Delivery.query.order_by(Delivery.created_at.desc()).limit(5).all()
+    new_pickup_requests = Delivery.query.filter(
+        Delivery.status == "New Request",
+        Delivery.created_by.is_(None),
+        Delivery.status_history.any(DeliveryStatusHistory.notes.ilike("%public website%")),
+    ).order_by(Delivery.created_at.desc()).limit(10).all()
 
     # Reminders
     upcoming_reminders = Reminder.query.filter(
@@ -94,6 +99,7 @@ def dashboard():
         revenue_month=revenue_month,
         recent_customers=recent_customers,
         recent_deliveries=recent_deliveries,
+        new_pickup_requests=new_pickup_requests,
         upcoming_reminders=upcoming_reminders,
         overdue_reminders=overdue_reminders,
     )
