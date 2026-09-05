@@ -49,6 +49,10 @@
                             {{ form.estimated_mileage(class="form-control") }}
                         </div>
                         <div class="col-md-6">
+                            {{ form.deadhead_miles.label(class="form-label") }}
+                            {{ form.deadhead_miles(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
                             {{ form.trip_type.label(class="form-label") }}
                             {{ form.trip_type(class="form-select") }}
                         </div>
@@ -95,6 +99,12 @@
                             <div class="form-check">
                                 {{ form.is_holiday(class="form-check-input") }}
                                 {{ form.is_holiday.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                {{ form.is_sunday(class="form-check-input") }}
+                                {{ form.is_sunday.label(class="form-check-label") }}
                             </div>
                         </div>
                         <div class="col-md-3 col-6">
@@ -222,6 +232,7 @@
             {% if calc_result.after_hours_charge %}<div class="quote-line"><span>After-Hours Surcharge</span><span>{{ calc_result.after_hours_charge | currency }}</span></div>{% endif %}
             {% if calc_result.weekend_charge %}<div class="quote-line"><span>Weekend Surcharge</span><span>{{ calc_result.weekend_charge | currency }}</span></div>{% endif %}
             {% if calc_result.holiday_charge %}<div class="quote-line"><span>Holiday Surcharge</span><span>{{ calc_result.holiday_charge | currency }}</span></div>{% endif %}
+            {% if calc_result.customer_quote_required %}<div class="alert alert-warning py-2">Sunday/holiday service requires a customer quote.</div>{% endif %}
             {% if calc_result.wait_time_charge %}<div class="quote-line"><span>Wait Time Charge</span><span>{{ calc_result.wait_time_charge | currency }}</span></div>{% endif %}
             {% if calc_result.additional_stop_charge %}<div class="quote-line"><span>Additional Stops</span><span>{{ calc_result.additional_stop_charge | currency }}</span></div>{% endif %}
             {% if calc_result.toll_charge %}<div class="quote-line"><span>Tolls</span><span>{{ calc_result.toll_charge | currency }}</span></div>{% endif %}
@@ -295,16 +306,20 @@
             <div class="card-body" style="font-size:0.85rem;">
                 <div class="row g-2">
                     <div class="col-6"><span class="text-muted">Base Charge:</span> {{ pricing.base_charge | currency }}</div>
-                    <div class="col-6"><span class="text-muted">Per Mile:</span> {{ pricing.per_mile_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Loaded Miles Included:</span> {{ pricing.loaded_miles_included }}</div>
+                    <div class="col-6"><span class="text-muted">Loaded Mile Rate:</span> {{ pricing.loaded_mile_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Deadhead Included:</span> {{ pricing.deadhead_miles_included }} mi</div>
+                    <div class="col-6"><span class="text-muted">Deadhead Mile Rate:</span> {{ pricing.deadhead_mile_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">Minimum:</span> {{ pricing.minimum_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">Tax Rate:</span> {{ pricing.tax_rate }}%</div>
                     <div class="col-6"><span class="text-muted">Rush:</span> {{ pricing.rush_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">STAT:</span> {{ pricing.stat_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">Same-Day:</span> {{ pricing.same_day_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">After Hours:</span> {{ pricing.after_hours_charge | currency }}</div>
-                    <div class="col-6"><span class="text-muted">Weekend:</span> {{ pricing.weekend_charge | currency }}</div>
-                    <div class="col-6"><span class="text-muted">Holiday:</span> {{ pricing.holiday_charge | currency }}</div>
-                    <div class="col-6"><span class="text-muted">Wait/Min:</span> {{ pricing.wait_time_per_minute | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Saturday:</span> {{ pricing.weekend_charge | currency }}</div>
+                    <div class="col-6"><span class="text-muted">Sunday/Holiday:</span> Customer Quote</div>
+                    <div class="col-6"><span class="text-muted">Wait Included:</span> {{ pricing.wait_time_included_minutes }} min</div>
+                    <div class="col-6"><span class="text-muted">Wait Block:</span> {{ pricing.wait_time_per_block | currency }} / {{ pricing.wait_time_block_minutes }} min</div>
                     <div class="col-6"><span class="text-muted">Add'l Stop:</span> {{ pricing.additional_stop_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">Special Handling:</span> {{ pricing.special_handling_charge | currency }}</div>
                     <div class="col-6"><span class="text-muted">Temp Control:</span> {{ pricing.temperature_controlled_charge | currency }}</div>

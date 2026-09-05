@@ -36,7 +36,20 @@ def board():
 
     query = Delivery.query
     if status_filter:
-        query = query.filter(Delivery.status == status_filter)
+        if status_filter == "In Progress":
+            query = query.filter(Delivery.status.in_([
+                "Driver Assigned", "En Route to Pickup", "Arrived at Pickup",
+                "Picked Up", "In Transit", "Arrived at Delivery",
+            ]))
+        else:
+            query = query.filter(Delivery.status == status_filter)
+    if date_filter == "today":
+        query = query.filter(db.func.date(Delivery.pickup_datetime) == date.today())
+    elif date_filter == "completed_today":
+        query = query.filter(
+            db.func.date(Delivery.actual_delivery_time) == date.today(),
+            Delivery.status.in_(["Delivered", "Completed"]),
+        )
     if driver_filter:
         query = query.filter(Delivery.driver_id == int(driver_filter))
 

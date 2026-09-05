@@ -7,32 +7,32 @@
 <!-- ── Stats Grid ── -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-3">
-        <div class="stat-card position-relative">
+        <a href="{{ url_for('dispatch.board', status='Scheduled', date='today') }}" class="stat-card position-relative d-block text-decoration-none">
             <i class="bi bi-calendar-check stat-icon text-primary"></i>
             <div class="stat-label">Scheduled Today</div>
             <div class="stat-value">{{ deliveries_today }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-        <div class="stat-card position-relative">
+        <a href="{{ url_for('dispatch.board', status='In Progress') }}" class="stat-card position-relative d-block text-decoration-none">
             <i class="bi bi-truck stat-icon text-warning"></i>
             <div class="stat-label">In Progress</div>
             <div class="stat-value">{{ in_progress }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-        <div class="stat-card position-relative">
+        <a href="{{ url_for('dispatch.board', status='Completed', date='completed_today') }}" class="stat-card position-relative d-block text-decoration-none">
             <i class="bi bi-check-circle stat-icon text-success"></i>
             <div class="stat-label">Completed Today</div>
             <div class="stat-value">{{ completed_today }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-        <div class="stat-card position-relative">
+        <a href="{{ url_for('quotes.index', status='pending') }}" class="stat-card position-relative d-block text-decoration-none">
             <i class="bi bi-file-text stat-icon text-info"></i>
             <div class="stat-label">Pending Quotes</div>
             <div class="stat-value">{{ pending_quotes }}</div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -46,14 +46,16 @@
         {% if new_pickup_requests %}
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
-                <thead><tr><th>Order #</th><th>Facility</th><th>Pickup Contact</th><th>Pickup Address</th><th>Received</th></tr></thead>
+                <thead><tr><th>Order #</th><th>Facility</th><th>Requester</th><th>Pickup</th><th>Delivery</th><th>Service</th><th>Received</th></tr></thead>
                 <tbody>
                     {% for d in new_pickup_requests %}
                     <tr>
                         <td><a href="{{ url_for('dispatch.detail', delivery_id=d.id) }}"><strong>{{ d.order_number }}</strong></a></td>
                         <td>{{ d.company_facility_name or d.pickup_facility or '—' }}</td>
-                        <td>{{ d.pickup_contact or '—' }}{% if d.pickup_contact_phone %}<small class="d-block text-muted">{{ d.pickup_contact_phone }}</small>{% endif %}</td>
-                        <td>{{ d.pickup_address or '—' }}</td>
+                        <td>{{ d.customer_notes.split('\n')[0] if d.customer_notes else (d.pickup_contact or '—') }}{% if d.pickup_contact %}<small class="d-block text-muted">Pickup: {{ d.pickup_contact }}</small>{% endif %}</td>
+                        <td>{{ d.pickup_address or '—' }}<small class="d-block text-muted">{{ d.pickup_datetime | datetime if d.pickup_datetime else 'No time provided' }}</small></td>
+                        <td>{{ d.delivery_address or '—' }}<small class="d-block text-muted">{{ d.delivery_contact or 'No contact provided' }}</small></td>
+                        <td>{{ d.service_type or 'Standard' }}{% if d.delivery_type %}<small class="d-block text-muted">{{ d.delivery_type }}</small>{% endif %}</td>
                         <td>{{ d.created_at | datetime }}</td>
                     </tr>
                     {% endfor %}
@@ -69,25 +71,25 @@
 <!-- ── Revenue Cards ── -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4">
-        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-success);">
+            <a href="{{ url_for('reports.index', period='today') }}" class="stat-card position-relative d-block text-decoration-none" style="border-left: 4px solid var(--tf-success);">
             <i class="bi bi-cash-coin stat-icon text-success"></i>
             <div class="stat-label">Revenue Today</div>
-            <div class="stat-value text-success">{{ revenue_today | currency }}</div>
-        </div>
+                <div class="stat-value text-success">{{ revenue_today | currency }}</div>
+            </a>
     </div>
     <div class="col-6 col-md-4">
-        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-navy);">
+            <a href="{{ url_for('reports.index', period='week') }}" class="stat-card position-relative d-block text-decoration-none" style="border-left: 4px solid var(--tf-navy);">
             <i class="bi bi-calendar-week stat-icon text-primary"></i>
             <div class="stat-label">Revenue This Week</div>
-            <div class="stat-value">{{ revenue_week | currency }}</div>
-        </div>
+                <div class="stat-value">{{ revenue_week | currency }}</div>
+            </a>
     </div>
     <div class="col-6 col-md-4">
-        <div class="stat-card position-relative" style="border-left: 4px solid var(--tf-amber);">
+            <a href="{{ url_for('reports.index', period='month') }}" class="stat-card position-relative d-block text-decoration-none" style="border-left: 4px solid var(--tf-amber);">
             <i class="bi bi-calendar-month stat-icon text-warning"></i>
             <div class="stat-label">Revenue This Month</div>
-            <div class="stat-value">{{ revenue_month | currency }}</div>
-        </div>
+                <div class="stat-value">{{ revenue_month | currency }}</div>
+            </a>
     </div>
 </div>
 

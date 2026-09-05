@@ -47,20 +47,16 @@ def request_pickup():
     if form.validate_on_submit():
         order_number = get_next_order_number()
 
-        pickup_datetime = None
         pickup_date = (form.pickup_date.data or "").strip()
         pickup_time = (form.pickup_time.data or "").strip()
-        if pickup_date:
-            if pickup_time:
-                try:
-                    pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M")
-                except ValueError:
-                    pickup_datetime = None
-            else:
-                try:
-                    pickup_datetime = datetime.strptime(pickup_date, "%Y-%m-%d")
-                except ValueError:
-                    pickup_datetime = None
+        try:
+            pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            form.pickup_date.errors.append("Enter a valid pickup date and time.")
+            return render_template(
+                "public/request_pickup.html", form=form, company_name=company_name,
+                submitted=False, order_number="",
+            ), 400
 
         # Build a structured "requested by" block so dispatch can see who
         # placed the request even though there is no logged-in user.

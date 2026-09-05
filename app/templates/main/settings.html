@@ -132,6 +132,10 @@
                         <div class="col-md-4">{{ pricing_form.base_charge.label(class="form-label") }}{{ pricing_form.base_charge(class="form-control") }}</div>
                         <div class="col-md-4">{{ pricing_form.per_mile_charge.label(class="form-label") }}{{ pricing_form.per_mile_charge(class="form-control") }}</div>
                         <div class="col-md-4">{{ pricing_form.minimum_charge.label(class="form-label") }}{{ pricing_form.minimum_charge(class="form-control") }}</div>
+                        <div class="col-md-3">{{ pricing_form.loaded_miles_included.label(class="form-label") }}{{ pricing_form.loaded_miles_included(class="form-control") }}</div>
+                        <div class="col-md-3">{{ pricing_form.loaded_mile_charge.label(class="form-label") }}{{ pricing_form.loaded_mile_charge(class="form-control") }}</div>
+                        <div class="col-md-3">{{ pricing_form.deadhead_miles_included.label(class="form-label") }}{{ pricing_form.deadhead_miles_included(class="form-control") }}</div>
+                        <div class="col-md-3">{{ pricing_form.deadhead_mile_charge.label(class="form-label") }}{{ pricing_form.deadhead_mile_charge(class="form-control") }}</div>
                     </div>
 
                     <h6 class="text-muted text-uppercase mb-3">Surcharges</h6>
@@ -142,12 +146,15 @@
                         <div class="col-md-4 col-lg-3">{{ pricing_form.after_hours_charge.label(class="form-label") }}{{ pricing_form.after_hours_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.weekend_charge.label(class="form-label") }}{{ pricing_form.weekend_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.holiday_charge.label(class="form-label") }}{{ pricing_form.holiday_charge(class="form-control") }}</div>
-                        <div class="col-md-4 col-lg-3">{{ pricing_form.wait_time_per_minute.label(class="form-label") }}{{ pricing_form.wait_time_per_minute(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.wait_time_included_minutes.label(class="form-label") }}{{ pricing_form.wait_time_included_minutes(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.wait_time_block_minutes.label(class="form-label") }}{{ pricing_form.wait_time_block_minutes(class="form-control") }}</div>
+                        <div class="col-md-4 col-lg-3">{{ pricing_form.wait_time_per_block.label(class="form-label") }}{{ pricing_form.wait_time_per_block(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.additional_stop_charge.label(class="form-label") }}{{ pricing_form.additional_stop_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.toll_charge.label(class="form-label") }}{{ pricing_form.toll_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.parking_charge.label(class="form-label") }}{{ pricing_form.parking_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.special_handling_charge.label(class="form-label") }}{{ pricing_form.special_handling_charge(class="form-control") }}</div>
                         <div class="col-md-4 col-lg-3">{{ pricing_form.temperature_controlled_charge.label(class="form-label") }}{{ pricing_form.temperature_controlled_charge(class="form-control") }}</div>
+                        <div class="col-12">{{ pricing_form.sunday_holiday_customer_quote(class="form-check-input") }} {{ pricing_form.sunday_holiday_customer_quote.label(class="form-check-label") }}</div>
                     </div>
 
                     <h6 class="text-muted text-uppercase mb-3">Discounts &amp; Tax</h6>

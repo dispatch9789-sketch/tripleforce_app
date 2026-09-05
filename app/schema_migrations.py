@@ -43,6 +43,17 @@ _NEW_DELIVERY_COLUMNS = [
     ("recurring_route_notes", "TEXT"),
 ]
 
+_NEW_PRICING_COLUMNS = [
+    ("loaded_miles_included", "FLOAT DEFAULT 10"),
+    ("loaded_mile_charge", "FLOAT DEFAULT 2"),
+    ("deadhead_miles_included", "FLOAT DEFAULT 10"),
+    ("deadhead_mile_charge", "FLOAT DEFAULT 1.25"),
+    ("sunday_holiday_customer_quote", "BOOLEAN DEFAULT TRUE"),
+    ("wait_time_included_minutes", "FLOAT DEFAULT 15"),
+    ("wait_time_block_minutes", "FLOAT DEFAULT 15"),
+    ("wait_time_per_block", "FLOAT DEFAULT 20"),
+]
+
 
 def ensure_delivery_columns(app, db):
     """Add any missing public-pickup columns to the deliveries table."""
@@ -102,3 +113,16 @@ def seed_checklist_items(app, db):
             db.session.add(item)
         db.session.commit()
         logger.info("Schema migration: seeded %d default checklist items", len(DEFAULT_CHECKLIST_ITEMS))
+
+
+def ensure_pricing_columns(app, db):
+    """Add editable rate-card columns without changing existing records."""
+    with app.app_context():
+        inspector = inspect(db.engine)
+        if "pricing_settings" not in inspector.get_table_names():
+            return
+        existing = {c["name"] for c in inspector.get_columns("pricing_settings")}
+        with db.engine.begin() as conn:
+            for col, coltype in _NEW_PRICING_COLUMNS:
+                if col not in existing:
+                    conn.execute(text('ALTER TABLE pricing_settings ADD COLUMN "{col}" {ctype}'.format(col=col, ctype=coltype)))

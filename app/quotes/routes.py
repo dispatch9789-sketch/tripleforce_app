@@ -66,12 +66,14 @@ def calculator():
         # Convert form to dict for calculator
         form_data = {
             "estimated_mileage":mileage,
+            "deadhead_miles": form.deadhead_miles.data or 0,
             "trip_type": form.trip_type.data,
             "is_rush": form.is_rush.data,
             "is_stat": form.is_stat.data,
             "is_same_day": form.is_same_day.data,
             "is_after_hours": form.is_after_hours.data,
             "is_weekend": form.is_weekend.data,
+            "is_sunday": form.is_sunday.data,
             "is_holiday": form.is_holiday.data,
             "temperature_controlled": form.temperature_controlled.data,
             "wait_time_minutes": form.wait_time_minutes.data or 0,

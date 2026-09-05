@@ -1,4 +1,5 @@
 """Utility functions: quote calculation, PDF generation, email helpers, formatting."""
+import math
 import os
 from datetime import datetime, date
 from functools import wraps
@@ -109,8 +110,6 @@ def calculate_quote(form_data, pricing=None):
     if pricing is None:
         pricing = get_pricing_settings()
 
-    print("PRICING DEBUG:", pricing.base_charge, pricing.per_mile_charge)
-
     mileage = float(form_data.get("estimated_mileage", 0) or 0)
     trip_type = form_data.get("trip_type", "one-way")
 
@@ -119,7 +118,14 @@ def calculate_quote(form_data, pricing=None):
 
     # Base charges
     base_charge = pricing.base_charge
-    mileage_charge = effective_mileage * pricing.per_mile_charge
+    loaded_miles = max(effective_mileage, 0)
+    included_loaded_miles = min(loaded_miles, pricing.loaded_miles_included)
+    loaded_miles_overage = max(loaded_miles - pricing.loaded_miles_included, 0)
+    loaded_mile_charge = loaded_miles_overage * pricing.loaded_mile_charge
+    deadhead_miles = float(form_data.get("deadhead_miles", 0) or 0)
+    deadhead_miles_overage = max(deadhead_miles - pricing.deadhead_miles_included, 0)
+    deadhead_mile_charge = deadhead_miles_overage * pricing.deadhead_mile_charge
+    mileage_charge = loaded_mile_charge + deadhead_mile_charge
 
     # Service surcharges
     rush_charge = pricing.rush_charge if form_data.get("is_rush") in (True, "y", "true") else 0
@@ -127,14 +133,17 @@ def calculate_quote(form_data, pricing=None):
     same_day_charge = pricing.same_day_charge if form_data.get("is_same_day") in (True, "y", "true") else 0
     after_hours_charge = pricing.after_hours_charge if form_data.get("is_after_hours") in (True, "y", "true") else 0
     weekend_charge = pricing.weekend_charge if form_data.get("is_weekend") in (True, "y", "true") else 0
-    holiday_charge = pricing.holiday_charge if form_data.get("is_holiday") in (True, "y", "true") else 0
+    is_sunday_or_holiday = form_data.get("is_sunday") in (True, "y", "true") or form_data.get("is_holiday") in (True, "y", "true")
+    holiday_charge = 0 if is_sunday_or_holiday and pricing.sunday_holiday_customer_quote else (pricing.holiday_charge if is_sunday_or_holiday else 0)
 
     # Additional charges
     wait_time_minutes = float(form_data.get("wait_time_minutes", 0) or 0)
-    wait_time_charge = wait_time_minutes * pricing.wait_time_per_minute
+    wait_block_minutes = max(pricing.wait_time_block_minutes or 15, 1)
+    wait_blocks = max(wait_time_minutes - pricing.wait_time_included_minutes, 0) / wait_block_minutes
+    wait_time_charge = math.ceil(wait_blocks) * pricing.wait_time_per_block
     additional_stop_charge = pricing.additional_stop_charge * float(form_data.get("additional_stops", 0) or 0)
-    toll_charge = float(form_data.get("toll_charge", 0) or pricing.toll_charge)
-    parking_charge = float(form_data.get("parking_charge", 0) or pricing.parking_charge)
+    toll_charge = float(form_data.get("toll_charge", 0) or 0)
+    parking_charge = float(form_data.get("parking_charge", 0) or 0)
     special_handling_charge = pricing.special_handling_charge if form_data.get("special_handling") in (True, "y", "true") else 0
     temp_control_charge = pricing.temperature_controlled_charge if form_data.get("temperature_controlled") in (True, "y", "true") else 0
 
@@ -173,12 +182,15 @@ def calculate_quote(form_data, pricing=None):
         "base_charge": round(base_charge, 2),
         "mileage_charge": round(mileage_charge, 2),
         "effective_mileage": effective_mileage,
+        "included_loaded_miles": included_loaded_miles,
+        "deadhead_mile_charge": round(deadhead_mile_charge, 2),
         "rush_charge": round(rush_charge, 2),
         "stat_charge": round(stat_charge, 2),
         "same_day_charge": round(same_day_charge, 2),
         "after_hours_charge": round(after_hours_charge, 2),
         "weekend_charge": round(weekend_charge, 2),
         "holiday_charge": round(holiday_charge, 2),
+        "customer_quote_required": bool(is_sunday_or_holiday and pricing.sunday_holiday_customer_quote),
         "wait_time_charge": round(wait_time_charge, 2),
         "additional_stop_charge": round(additional_stop_charge, 2),
         "toll_charge": round(toll_charge, 2),
