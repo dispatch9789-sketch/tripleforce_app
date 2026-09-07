@@ -11,7 +11,14 @@ class Config:
     # ── Security ──
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = os.environ.get("FLASK_DEBUG", "1").lower() not in ("true", "1", "yes")
+    _debug_enabled = os.environ.get("FLASK_DEBUG", "1").lower() in ("true", "1", "yes")
+    _railway_deployment = bool(os.environ.get("RAILWAY_ENVIRONMENT_NAME") or os.environ.get("RAILWAY_PROJECT_ID"))
+    _explicit_secure = os.environ.get("SESSION_COOKIE_SECURE")
+    SESSION_COOKIE_SECURE = (
+        True
+        if _railway_deployment
+        else (_explicit_secure or ("false" if _debug_enabled else "true")).lower() in ("true", "1", "yes")
+    )
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 28800  # 8 hours
 
