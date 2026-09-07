@@ -13,6 +13,7 @@ Verifies:
   - Staff-only routes still redirect to login when logged out.
 """
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime
@@ -90,7 +91,6 @@ def main():
     for opt in ["Room Temperature", "Refrigerated", "Frozen", "Other / Special Requirement"]:
         if opt not in body:
             failures.append(f"Temperature Requirement missing option: {opt}")
-
     # ── 2. No internal nav on the public page ──
     found_labels = [lbl for lbl in INTERNAL_LABELS if lbl in body]
     found_markers = [m for m in SIDEBAR_MARKERS if m in body]
@@ -134,6 +134,9 @@ def main():
         "recurring_route_notes": "Mon/Wed/Fri 9am pickup",
         "customer_notes": "Call on arrival",
     }
+    token_match = re.search(r'name="submission_token"[^>]*value="([^"]+)"', body)
+    if token_match:
+        payload["submission_token"] = token_match.group(1)
     r = client.post("/request-pickup", data=payload, follow_redirects=True)
     body = r.get_data(as_text=True)
     print(f"[POST /request-pickup] status={r.status_code}")

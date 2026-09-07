@@ -5,15 +5,17 @@ blueprints so they never inherit the internal sidebar or admin navigation,
 regardless of whether a staff member happens to be logged in.
 """
 from datetime import datetime
+import secrets
 
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for, current_app,
+    session,
 )
 from app.extensions import db
 from app.models import Delivery, DeliveryStatusHistory
 from app.forms import CustomerPickupRequestForm
 from app.utils import get_next_order_number, get_company_settings
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 public = Blueprint("public", __name__)
 
@@ -42,10 +44,30 @@ def request_pickup():
     protected behind the existing login/role system.
     """
     form = CustomerPickupRequestForm()
+    submission_token = session.get("pickup_submission_token")
+    if request.method == "GET" and not submission_token:
+        submission_token = secrets.token_urlsafe(32)
+        session["pickup_submission_token"] = submission_token
+    if request.method == "GET":
+        form.submission_token.data = submission_token
     settings = get_company_settings()
     company_name = settings.company_name if settings else "Triple Force Logistic LLC"
 
     if form.validate_on_submit():
+        if form.submission_token.data != submission_token:
+            existing = Delivery.query.filter_by(
+                public_submission_token=form.submission_token.data
+            ).first()
+            if existing:
+                return redirect(
+                    url_for("public.request_pickup")
+                    + "?submitted=1&order=" + existing.order_number
+                )
+            form.submission_token.errors.append("This pickup form has expired. Please reload and try again.")
+            return render_template(
+                "public/request_pickup.html", form=form, company_name=company_name,
+                submitted=False, order_number="",
+            ), 400
         order_number = get_next_order_number()
 
         pickup_date = (form.pickup_date.data or "").strip()
@@ -80,6 +102,7 @@ def request_pickup():
 
         delivery = Delivery(
             order_number=order_number,
+            public_submission_token=submission_token,
             customer_id=None,  # public submission — not linked to a Customer record
             company_facility_name=form.company_facility_name.data or None,
             pickup_contact=form.pickup_contact.data or requester_contact,
@@ -125,6 +148,25 @@ def request_pickup():
         db.session.add(history)
         try:
             db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            existing = Delivery.query.filter_by(public_submission_token=submission_token).first()
+            if existing:
+                session.pop("pickup_submission_token", None)
+                return redirect(
+                    url_for("public.request_pickup")
+                    + "?submitted=1&order=" + existing.order_number
+                )
+            current_app.logger.exception("Public pickup request could not be saved")
+            flash(
+                "We could not save your pickup request. Please try again. "
+                "If the problem continues, contact us directly.",
+                "error",
+            )
+            return render_template(
+                "public/request_pickup.html", form=form, company_name=company_name,
+                submitted=False, order_number="",
+            ), 500
         except SQLAlchemyError:
             db.session.rollback()
             current_app.logger.exception("Public pickup request could not be saved")
@@ -137,6 +179,8 @@ def request_pickup():
                 "public/request_pickup.html", form=form, company_name=company_name,
                 submitted=False, order_number="",
             ), 500
+
+        session.pop("pickup_submission_token", None)
 
         # Best-effort internal notification email. Never blocks the request
         # and never rolls back the delivery on failure.

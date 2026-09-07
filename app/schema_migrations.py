@@ -30,6 +30,7 @@ logger = logging.getLogger("tripleforce.schema")
 # ``requested_delivery_deadline`` reuses the existing ``delivery_deadline``
 # column on the deliveries table, so it is intentionally not listed here.
 _NEW_DELIVERY_COLUMNS = [
+    ("public_submission_token", "VARCHAR(64)"),
     ("company_facility_name", "VARCHAR(255)"),
     ("pickup_contact_phone", "VARCHAR(50)"),
     ("delivery_contact_phone", "VARCHAR(50)"),
@@ -91,6 +92,13 @@ def ensure_delivery_columns(app, db):
             logger.info("Schema migration: added deliveries columns: %s", ", ".join(added))
         if skipped:
             logger.info("Schema migration: columns already added by another worker: %s", ", ".join(skipped))
+
+        with db.engine.begin() as conn:
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "ix_deliveries_public_submission_token "
+                "ON deliveries (public_submission_token)"
+            ))
 
 
 def seed_checklist_items(app, db):

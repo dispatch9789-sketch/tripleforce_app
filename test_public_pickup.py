@@ -9,6 +9,7 @@ Verifies:
     login when logged out (still protected)
 """
 import os
+import re
 import tempfile
 from datetime import datetime
 
@@ -70,6 +71,9 @@ def main():
         failures.append("GET page missing request form link target")
     if 'value="Submit Request"' not in body:
         failures.append("GET page missing 'Submit Request' button")
+    token_match = re.search(r'name="submission_token"[^>]*value="([^"]+)"', body)
+    if not token_match:
+        failures.append("GET page missing public submission token")
 
     # ── 2. No internal nav / sidebar on the public page ──
     found_labels = [lbl for lbl in INTERNAL_LABELS if lbl in body]
@@ -107,6 +111,8 @@ def main():
         "temperature_requirement": "Refrigerated",
         "customer_notes": "Call on arrival",
     }
+    if token_match:
+        payload["submission_token"] = token_match.group(1)
     r = client.post("/request-pickup", data=payload, follow_redirects=True)
     print(f"[POST /request-pickup] status={r.status_code}")
     body = r.get_data(as_text=True)
@@ -124,6 +130,15 @@ def main():
     if 'name="requester_name"' in body:
         failures.append("Confirmation page still contains the filled pickup form")
 
+    # A repeated submission of the same form token must return the original
+    # confirmation and must not create a second delivery.
+    if token_match:
+        with client.session_transaction() as sess:
+            sess["pickup_submission_token"] = token_match.group(1)
+        duplicate = client.post("/request-pickup", data=payload, follow_redirects=True)
+        if duplicate.status_code != 200 or "Pickup Request Received" not in duplicate.get_data(as_text=True):
+            failures.append("Repeated pickup submission did not return confirmation")
+
     # Verify the Delivery was created in the DB
     with app.app_context():
         deliveries = Delivery.query.order_by(Delivery.id.desc()).all()
@@ -131,6 +146,8 @@ def main():
         if not created:
             failures.append("No Delivery record was created by POST")
         else:
+            if len(deliveries) != 1:
+                failures.append(f"Repeated pickup submission created {len(deliveries)} deliveries, expected 1")
             print(f"[DB] Created Delivery id={created.id} order={created.order_number} "
                   f"status={created.status} is_medical={created.is_medical} "
                   f"service_type={created.service_type} created_by={created.created_by}")
@@ -209,6 +226,8 @@ def main():
             failures.append(f"Staff dashboard missing public request value: {value}")
     if "No new website pickup requests" in dashboard_body:
         failures.append("Dashboard new pickup request query returned zero after submission")
+    if "no-store" not in r.headers.get("Cache-Control", ""):
+        failures.append("Staff dashboard response is missing no-store caching")
 
     r = client.get("/dispatch/?status=New+Request")
     dispatch_body = r.get_data(as_text=True)
@@ -220,6 +239,8 @@ def main():
             failures.append(f"Dispatch board missing public request value: {value}")
     if "123 Main St, New York, NY 10001" not in dispatch_body or "456 Health Ave, New York, NY 10002" not in dispatch_body:
         failures.append("Dispatch board did not return the submitted pickup and delivery details")
+    if "no-store" not in r.headers.get("Cache-Control", ""):
+        failures.append("Dispatch board response is missing no-store caching")
 
     r = client.get("/request-pickup")
     body = r.get_data(as_text=True)

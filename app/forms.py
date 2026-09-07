@@ -186,6 +186,7 @@ class DeliveryForm(FlaskForm):
 #   fields. Writes to the same Delivery model as the staff form.)
 # ═══════════════════════════════════════════════════════════════
 class CustomerPickupRequestForm(FlaskForm):
+    submission_token = HiddenField(validators=[DataRequired()])
     # Who is requesting the pickup
     company_facility_name = StringField("Company / Facility Name", validators=[Optional(), Length(max=255)])
     requester_name = StringField("Your Name", validators=[DataRequired(), Length(max=200)])

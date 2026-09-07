@@ -326,6 +326,7 @@ class Delivery(db.Model):
 
     # Metadata
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    public_submission_token = db.Column(db.String(64), unique=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

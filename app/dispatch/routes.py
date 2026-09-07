@@ -4,7 +4,7 @@ import os
 from datetime import datetime, date
 from io import BytesIO
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file, current_app, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file, current_app, jsonify, make_response
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -61,11 +61,14 @@ def board():
     for s in DELIVERY_STATUSES:
         grouped[s] = [d for d in deliveries if d.status == s]
 
-    return render_template("dispatch/board.html",
+    response = make_response(render_template("dispatch/board.html",
         deliveries=deliveries, grouped=grouped, drivers=drivers,
         statuses=DELIVERY_STATUSES, view=view,
         status_filter=status_filter, driver_filter=driver_filter,
-    )
+    ))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 @dispatch.route("/new", methods=["GET", "POST"])

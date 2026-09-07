@@ -1,7 +1,7 @@
 """Main blueprint: dashboard, universal search, settings, drivers, expenses."""
 from datetime import datetime, date, timedelta
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify, send_file
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify, send_file, make_response
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -88,7 +88,7 @@ def dashboard():
 
     overdue_reminders = [r for r in upcoming_reminders if r.is_overdue]
 
-    return render_template("main/dashboard.html",
+    response = make_response(render_template("main/dashboard.html",
         deliveries_today=deliveries_today,
         in_progress=in_progress,
         completed_today=completed_today,
@@ -102,7 +102,10 @@ def dashboard():
         new_pickup_requests=new_pickup_requests,
         upcoming_reminders=upcoming_reminders,
         overdue_reminders=overdue_reminders,
-    )
+    ))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 # ═══════════════════════════════════════════════════════════════
