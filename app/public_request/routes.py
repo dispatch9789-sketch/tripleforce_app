@@ -6,6 +6,7 @@ regardless of whether a staff member happens to be logged in.
 """
 from datetime import datetime
 import secrets
+from threading import Thread
 
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for, current_app,
@@ -18,6 +19,16 @@ from app.utils import get_next_order_number, get_company_settings
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 public = Blueprint("public", __name__)
+
+
+def _send_pickup_notification(app, recipient, subject, body):
+    """Send the non-critical notification outside the customer request."""
+    with app.app_context():
+        try:
+            from app.utils import send_email
+            send_email(recipient, subject, body)
+        except Exception as exc:  # pragma: no cover - defensive worker guard
+            app.logger.info("Pickup notification email skipped: %s", exc)
 
 
 @public.route("/")
@@ -182,10 +193,9 @@ def request_pickup():
 
         session.pop("pickup_submission_token", None)
 
-        # Best-effort internal notification email. Never blocks the request
-        # and never rolls back the delivery on failure.
+        # Best-effort internal notification email. It runs after persistence in
+        # a short-lived background thread so SMTP cannot delay confirmation.
         try:
-            from app.utils import send_email
             notify_to = settings.email if settings else current_app.config.get("MAIL_DEFAULT_SENDER")
             if notify_to:
                 body = (
@@ -210,7 +220,17 @@ def request_pickup():
                         "Yes" if form.is_recurring.data == "Yes" else "No",
                     )
                 )
-                send_email(notify_to, "New Pickup Request — {}".format(order_number), body)
+                notification_thread = Thread(
+                    target=_send_pickup_notification,
+                    args=(
+                        current_app._get_current_object(),
+                        notify_to,
+                        "New Pickup Request — {}".format(order_number),
+                        body,
+                    ),
+                    daemon=True,
+                )
+                notification_thread.start()
         except Exception as e:  # pragma: no cover - non-fatal
             current_app.logger.info("Pickup notification email skipped: %s", e)
 
