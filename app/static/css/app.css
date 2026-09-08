@@ -450,6 +450,91 @@ a:hover { text-decoration: underline; }
     color: var(--tf-navy);
 }
 
+/* ── Dispatch monthly calendar ── */
+.dispatch-calendar {
+    background: var(--tf-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.dispatch-calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem;
+}
+
+.dispatch-calendar-month {
+    color: var(--tf-navy);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.dispatch-calendar-weekdays,
+.dispatch-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.dispatch-calendar-weekdays {
+    background: var(--tf-navy);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.5rem 0;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.dispatch-calendar-day {
+    min-height: 7rem;
+    padding: 0.4rem;
+    border-right: 1px solid var(--tf-border);
+    border-bottom: 1px solid var(--tf-border);
+    background: var(--tf-surface);
+}
+
+.dispatch-calendar-day:nth-child(7n) { border-right: 0; }
+.dispatch-calendar-day.is-empty { background: var(--tf-surface-alt); }
+.dispatch-calendar-day.is-today { background: rgba(245, 166, 35, 0.12); }
+
+.dispatch-calendar-date {
+    color: var(--tf-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.dispatch-calendar-event {
+    display: block;
+    color: var(--tf-navy);
+    background: var(--tf-surface-alt);
+    border-left: 3px solid var(--tf-amber);
+    border-radius: 0.25rem;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin-bottom: 0.25rem;
+    min-height: 2.2rem;
+    padding: 0.25rem;
+    text-decoration: none;
+}
+
+.dispatch-calendar-event:hover,
+.dispatch-calendar-event:focus { text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.dispatch-calendar-event span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 575.98px) {
+    .dispatch-calendar-toolbar { align-items: flex-start; flex-direction: column-reverse; }
+    .dispatch-calendar-toolbar .btn-group { width: 100%; }
+    .dispatch-calendar-toolbar .btn { flex: 1; min-height: 2.5rem; }
+    .dispatch-calendar-day { min-height: 6.5rem; padding: 0.25rem; }
+    .dispatch-calendar-event { font-size: 0.66rem; }
+    .dispatch-calendar-event span { display: none; }
+}
+
 [data-theme="dark"] .dispatch-card .order-num { color: var(--tf-amber-light); }
 
 /* ── Page title ── */

@@ -32,7 +32,7 @@
         <div class="btn-group btn-group-sm" role="group">
             <a href="{{ url_for('dispatch.board', view='board', status=status_filter, driver=driver_filter) }}" class="btn {% if view != 'list' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}"><i class="bi bi-kanban"></i> Board</a>
             <a href="{{ url_for('dispatch.board', view='list', status=status_filter, driver=driver_filter) }}" class="btn {% if view == 'list' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}"><i class="bi bi-list-ul"></i> List</a>
-            <button type="button" class="btn btn-outline-secondary" disabled title="Calendar view coming soon"><i class="bi bi-calendar3"></i> Calendar</button>
+            <a href="{{ url_for('dispatch.board', view='calendar', status=status_filter, driver=driver_filter) }}" class="btn {% if view == 'calendar' %}btn-tf-primary{% else %}btn-outline-secondary{% endif %}"><i class="bi bi-calendar3"></i> Calendar</a>
         </div>
         <a href="{{ url_for('dispatch.new_delivery') }}" class="btn btn-tf-amber btn-sm"><i class="bi bi-plus-lg"></i> New Delivery</a>
     </div>
@@ -100,6 +100,93 @@
         {% endif %}
     </div>
 </div>
+
+{% elif view == 'calendar' %}
+<!-- ── Calendar View ── -->
+<section class="dispatch-calendar" aria-label="Monthly pickup calendar">
+    <div class="dispatch-calendar-toolbar">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Calendar navigation">
+            <button type="button" class="btn btn-outline-secondary" id="calendarPrevious"><i class="bi bi-chevron-left"></i> Previous</button>
+            <button type="button" class="btn btn-outline-secondary" id="calendarToday">Today</button>
+            <button type="button" class="btn btn-outline-secondary" id="calendarNext">Next <i class="bi bi-chevron-right"></i></button>
+        </div>
+        <h2 class="dispatch-calendar-month" id="calendarMonth" aria-live="polite"></h2>
+    </div>
+    <div class="dispatch-calendar-weekdays" aria-hidden="true">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+    </div>
+    <div class="dispatch-calendar-grid" id="calendarGrid"></div>
+</section>
+<script>
+(function () {
+    var events = {{ calendar_events | tojson }};
+    var currentMonth = new Date();
+    currentMonth.setDate(1);
+    var monthLabel = document.getElementById('calendarMonth');
+    var grid = document.getElementById('calendarGrid');
+
+    function monthKey(year, month, day) {
+        return year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    }
+
+    function renderCalendar() {
+        var year = currentMonth.getFullYear();
+        var month = currentMonth.getMonth();
+        var firstDay = new Date(year, month, 1).getDay();
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var today = new Date();
+        var byDate = {};
+        events.forEach(function (event) {
+            (byDate[event.pickup_date] || (byDate[event.pickup_date] = [])).push(event);
+        });
+
+        monthLabel.textContent = currentMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        grid.innerHTML = '';
+        for (var i = 0; i < firstDay; i += 1) {
+            var blank = document.createElement('div');
+            blank.className = 'dispatch-calendar-day is-empty';
+            blank.setAttribute('aria-hidden', 'true');
+            grid.appendChild(blank);
+        }
+        for (var day = 1; day <= daysInMonth; day += 1) {
+            var cell = document.createElement('div');
+            var key = monthKey(year, month, day);
+            cell.className = 'dispatch-calendar-day';
+            if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                cell.className += ' is-today';
+            }
+            var number = document.createElement('div');
+            number.className = 'dispatch-calendar-date';
+            number.textContent = day;
+            cell.appendChild(number);
+            (byDate[key] || []).forEach(function (event) {
+                var link = document.createElement('a');
+                link.className = 'dispatch-calendar-event';
+                link.href = event.url;
+                link.innerHTML = '<strong>' + event.pickup_time + '</strong> ' + event.order_number + '<span>' + event.location + '</span>';
+                link.setAttribute('aria-label', event.pickup_time + ' pickup ' + event.order_number + ' at ' + event.location);
+                cell.appendChild(link);
+            });
+            grid.appendChild(cell);
+        }
+    }
+
+    document.getElementById('calendarPrevious').addEventListener('click', function () {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+    });
+    document.getElementById('calendarToday').addEventListener('click', function () {
+        currentMonth = new Date();
+        currentMonth.setDate(1);
+        renderCalendar();
+    });
+    document.getElementById('calendarNext').addEventListener('click', function () {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+    });
+    renderCalendar();
+}());
+</script>
 
 {% else %}
 <!-- ── Board View ── -->

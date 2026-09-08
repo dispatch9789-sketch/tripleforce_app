@@ -53,8 +53,24 @@ def board():
     if driver_filter:
         query = query.filter(Delivery.driver_id == int(driver_filter))
 
-    deliveries = query.order_by(Delivery.created_at.desc()).limit(100).all()
+    deliveries_query = query.order_by(Delivery.created_at.desc())
+    deliveries = deliveries_query.all() if view == "calendar" else deliveries_query.limit(100).all()
     drivers = Driver.query.filter_by(is_active=True).all()
+
+    calendar_events = [
+        {
+            "id": delivery.id,
+            "order_number": delivery.order_number,
+            "pickup_date": delivery.pickup_datetime.strftime("%Y-%m-%d"),
+            "pickup_time": delivery.pickup_datetime.strftime("%I:%M %p").lstrip("0"),
+            "location": delivery.company_facility_name or delivery.pickup_facility or "Walk-in",
+            "address": delivery.pickup_address or "",
+            "status": delivery.status,
+            "url": url_for("dispatch.detail", delivery_id=delivery.id),
+        }
+        for delivery in deliveries
+        if delivery.pickup_datetime
+    ]
 
     # Group by status for board view
     grouped = {}
@@ -65,6 +81,7 @@ def board():
         deliveries=deliveries, grouped=grouped, drivers=drivers,
         statuses=DELIVERY_STATUSES, view=view,
         status_filter=status_filter, driver_filter=driver_filter,
+        calendar_events=calendar_events,
     ))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
