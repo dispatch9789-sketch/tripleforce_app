@@ -69,11 +69,15 @@ def main():
         "company_facility_name", "pickup_date", "pickup_time", "pickup_contact_phone",
         "delivery_contact_phone", "delivery_type", "delivery_type_other", "trip_type",
         "package_weight", "package_size", "reference_number", "is_recurring",
-        "recurring_route_notes", "requested_delivery_deadline", "temperature_requirement",
+        "recurring_route_notes", "requested_delivery_date", "requested_delivery_time", "temperature_requirement",
     ]
     for f in expected_fields:
         if f'name="{f}"' not in body:
             failures.append(f"form missing input name={f}")
+    if not re.search(r'name="requested_delivery_date"[^>]*type="date"', body):
+        failures.append("requested_delivery_date is not a native date picker")
+    if not re.search(r'name="requested_delivery_time"[^>]*type="time"', body):
+        failures.append("requested_delivery_time is not a native time picker")
     # Rush must appear as a Service Type option
     if 'value="Rush"' not in body:
         failures.append("Service Type dropdown missing 'Rush' option")
@@ -115,7 +119,8 @@ def main():
         "delivery_contact_phone": "(555) 222-5555",
         "delivery_address": "456 Health Ave, New York, NY 10002",
         "delivery_instructions": "Lab window 2, ring bell",
-        "requested_delivery_deadline": "2026-08-24T11:30",
+        "requested_delivery_date": "2026-08-24",
+        "requested_delivery_time": "11:30",
         "service_type": "Rush",
         "delivery_type": "Other",
         "delivery_type_other": "Biological samples in cooler",
@@ -173,8 +178,11 @@ def main():
                 failures.append(f"is_recurring={created.is_recurring}, expected True")
             if created.pickup_datetime != datetime(2026, 8, 24, 9, 0):
                 failures.append(f"pickup_datetime={created.pickup_datetime!r}, expected 2026-08-24 09:00")
-            if created.delivery_deadline is None:
-                failures.append("requested_delivery_deadline (delivery_deadline) not persisted")
+            if created.delivery_deadline != datetime(2026, 8, 24, 11, 30):
+                failures.append(
+                    "requested delivery date/time not combined into delivery_deadline "
+                    f"(got {created.delivery_deadline!r})"
+                )
             delivery_id = created.id
 
     # ── 5. Staff request-detail page renders every new value ──

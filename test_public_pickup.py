@@ -167,6 +167,8 @@ def main():
                 failures.append("is_medical not persisted correctly")
             if created.pickup_datetime != datetime(2026, 8, 24, 9, 0):
                 failures.append(f"pickup_datetime={created.pickup_datetime!r}, expected 2026-08-24 09:00")
+            if created.delivery_deadline is not None:
+                failures.append(f"delivery_deadline={created.delivery_deadline!r}, expected None when blank")
             # Status history should mirror the staff route for timeline consistency
             hist = created.status_history or []
             print(f"[DB] status_history rows={len(hist)} first={hist[0].status if hist else None} "

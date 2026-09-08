@@ -116,10 +116,14 @@
                 {{ form.delivery_contact_phone.label(class="form-label") }}
                 {{ form.delivery_contact_phone(class="form-control", placeholder="(555) 123-4567 — who to call at destination") }}
             </div>
-            <div class="col-md-8">
-                {{ form.requested_delivery_deadline.label(class="form-label") }}
-                {{ form.requested_delivery_deadline(class="form-control") }}
-                <div class="form-text small">Expected delivery time/deadline — especially for Rush, STAT, Same-day, or Scheduled.</div>
+            <div class="col-md-4">
+                {{ form.requested_delivery_date.label(class="form-label") }}
+                {{ form.requested_delivery_date(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+                {{ form.requested_delivery_time.label(class="form-label") }}
+                {{ form.requested_delivery_time(class="form-control") }}
+                <div class="form-text small">Optional requested delivery date and time.</div>
             </div>
             <div class="col-12">
                 {{ form.delivery_instructions.label(class="form-label") }}

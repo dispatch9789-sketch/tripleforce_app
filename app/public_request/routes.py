@@ -92,6 +92,13 @@ def request_pickup():
                 submitted=False, order_number="",
             ), 400
 
+        delivery_deadline = None
+        if form.requested_delivery_date.data and form.requested_delivery_time.data:
+            delivery_deadline = datetime.combine(
+                form.requested_delivery_date.data,
+                form.requested_delivery_time.data,
+            )
+
         # Build a structured "requested by" block so dispatch can see who
         # placed the request even though there is no logged-in user.
         requested_by = "Requested by: {} | Phone: {}".format(
@@ -125,7 +132,7 @@ def request_pickup():
             delivery_contact_phone=form.delivery_contact_phone.data or None,
             delivery_address=form.delivery_address.data,
             delivery_instructions=form.delivery_instructions.data,
-            delivery_deadline=form.requested_delivery_deadline.data,
+            delivery_deadline=delivery_deadline,
             service_type=form.service_type.data,
             delivery_type=form.delivery_type.data or None,
             delivery_type_other=(form.delivery_type_other.data or None) if form.delivery_type.data == "Other" else None,

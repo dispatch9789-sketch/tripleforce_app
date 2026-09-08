@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import (
     StringField, TextAreaField, PasswordField, BooleanField,
-    SelectField, FloatField, IntegerField, DateField, DateTimeField,
+    SelectField, FloatField, IntegerField, DateField, TimeField, DateTimeField,
     SubmitField, HiddenField,
 )
 from wtforms.validators import DataRequired, Email, Optional, Length, NumberRange
@@ -206,7 +206,8 @@ class CustomerPickupRequestForm(FlaskForm):
     delivery_contact_phone = StringField("Delivery Contact Phone", validators=[Optional(), Length(max=50)])
     delivery_address = StringField("Delivery Address", validators=[DataRequired(), Length(max=500)])
     delivery_instructions = TextAreaField("Delivery Instructions", validators=[Optional(), Length(max=2000)])
-    requested_delivery_deadline = DateTimeField("Requested Delivery Deadline", format="%Y-%m-%dT%H:%M", validators=[Optional()])
+    requested_delivery_date = DateField("Requested Delivery Date", format="%Y-%m-%d", validators=[Optional()])
+    requested_delivery_time = TimeField("Requested Delivery Time", format="%H:%M", validators=[Optional()])
 
     # Service details
     service_type = SelectField("Service Type", choices=[(s, s) for s in SERVICE_TYPES], default="Standard")
