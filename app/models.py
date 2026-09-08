@@ -348,9 +348,12 @@ class Delivery(db.Model):
     @property
     def is_public_request(self):
         """Whether this delivery originated from the public pickup form."""
-        return self.created_by is None and any(
-            "public website" in (history.notes or "").lower()
-            for history in self.status_history
+        return self.created_by is None and (
+            self.public_submission_token is not None
+            or any(
+                "public website" in (history.notes or "").lower()
+                for history in self.status_history
+            )
         )
 
 

@@ -155,6 +155,10 @@ def main():
                 failures.append(f"Delivery status={created.status}, expected 'New Request'")
             if created.created_by is not None:
                 failures.append(f"Delivery.created_by={created.created_by}, expected None (public)")
+            if not created.public_submission_token:
+                failures.append("public_submission_token was not persisted")
+            if not created.is_public_request:
+                failures.append("Delivery was not identified as a public request")
             if "Jane Customer" not in (created.customer_notes or ""):
                 failures.append("customer_notes does not record the requester name")
             if created.pickup_address != "123 Main St, New York, NY 10001":
@@ -221,7 +225,7 @@ def main():
     print(f"[GET /dashboard as staff] status={r.status_code}")
     if r.status_code != 200:
         failures.append(f"Staff dashboard returned {r.status_code}, expected 200")
-    for value in ("New Pickup Requests", "TF-", "NYC Lab", "Front Desk"):
+    for value in ("New Pickup Requests", "TF-", "NYC Lab", "Jane Customer", "(555) 222-3333", "Front Desk"):
         if value not in dashboard_body:
             failures.append(f"Staff dashboard missing public request value: {value}")
     if "No new website pickup requests" in dashboard_body:
@@ -234,7 +238,7 @@ def main():
     print(f"[GET /dispatch/ as staff] status={r.status_code}")
     if r.status_code != 200:
         failures.append(f"Staff dispatch board returned {r.status_code}, expected 200")
-    for value in ("Website Request", "NYC Lab", "Front Desk"):
+    for value in ("Website Request", "NYC Lab", "Jane Customer", "(555) 222-3333", "Front Desk"):
         if value not in dispatch_body:
             failures.append(f"Dispatch board missing public request value: {value}")
     if "123 Main St, New York, NY 10001" not in dispatch_body or "456 Health Ave, New York, NY 10002" not in dispatch_body:

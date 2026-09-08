@@ -77,7 +77,10 @@ def dashboard():
     new_pickup_requests = Delivery.query.filter(
         Delivery.status == "New Request",
         Delivery.created_by.is_(None),
-        Delivery.status_history.any(DeliveryStatusHistory.notes.ilike("%public website%")),
+        db.or_(
+            Delivery.public_submission_token.isnot(None),
+            Delivery.status_history.any(DeliveryStatusHistory.notes.ilike("%public website%")),
+        ),
     ).order_by(Delivery.created_at.desc()).limit(10).all()
 
     # Reminders
