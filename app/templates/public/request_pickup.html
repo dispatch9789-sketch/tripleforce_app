@@ -26,6 +26,24 @@
     <h1 class="public-card-title">Request a Pickup</h1>
     <p class="public-card-subtitle">Tell us about your shipment and we'll handle the rest.</p>
 
+    {% set validation_fields = [] %}
+    {% for field in form if field.errors %}
+        {% if validation_fields.append(field) %}{% endif %}
+    {% endfor %}
+    {% if validation_fields %}
+    <div class="alert alert-danger public-validation-summary" role="alert" tabindex="-1" aria-labelledby="pickup-validation-heading">
+        <h2 id="pickup-validation-heading" class="h6 mb-2">Please correct the following fields:</h2>
+        <ul class="mb-0 ps-3">
+            {% for field in validation_fields %}
+            <li>
+                <a href="#{{ field.id }}" class="alert-link pickup-error-link">{{ field.label.text }}</a>
+                {% for error in field.errors %}<div class="small">{{ error }}</div>{% endfor %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <form method="POST" action="{{ url_for('public.request_pickup') }}" class="public-form" novalidate>
         {{ form.hidden_tag() }}
 
@@ -207,6 +225,32 @@
 // Show/hide conditional fields only. The inputs stay enabled and are always
 // submitted to the server, so persistence does not depend on JavaScript.
 (function () {
+    var invalidFields = [
+        {% for field in validation_fields %}
+        "{{ field.id }}"{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    invalidFields.forEach(function (fieldId) {
+        var field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.add('is-invalid');
+        field.setAttribute('aria-invalid', 'true');
+    });
+
+    var firstInvalid = invalidFields.length ? document.getElementById(invalidFields[0]) : null;
+    var summary = document.querySelector('.public-validation-summary');
+    if (firstInvalid) {
+        window.setTimeout(function () {
+            firstInvalid.focus({ preventScroll: true });
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
+    } else if (summary) {
+        window.setTimeout(function () {
+            summary.focus({ preventScroll: true });
+            summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
+    }
+
     var dt = document.querySelector('select[name="delivery_type"]');
     var dtOther = document.getElementById('delivery-type-other-wrap');
     function syncDeliveryType() {
