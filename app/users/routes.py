@@ -17,7 +17,7 @@ users = Blueprint("users", __name__)
 @admin_required
 def index():
     """List all system users."""
-    all_users = User.query.order_by(User.created_at.desc()).all()
+    all_users = User.query.filter(User.role != "customer").order_by(User.created_at.desc()).all()
     return render_template("users/index.html", users=all_users)
 
 
@@ -72,7 +72,7 @@ def create():
 def edit(user_id):
     """Edit an existing user account."""
     user = db.session.get(User, user_id)
-    if not user:
+    if not user or user.role == "customer":
         abort(404)
 
     form = UserEditForm(obj=user)
@@ -126,7 +126,7 @@ def edit(user_id):
 def toggle_active(user_id):
     """Activate/deactivate a user account."""
     user = db.session.get(User, user_id)
-    if not user:
+    if not user or user.role == "customer":
         abort(404)
 
     if user.id == current_user.id:

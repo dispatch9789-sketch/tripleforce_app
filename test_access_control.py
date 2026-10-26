@@ -22,18 +22,12 @@ Run:  python test_access_control.py
 """
 import os
 import sys
-
-# NOTE: app/config.py forces sqlite:///<repo>/tripleforce.db whenever
-# DATABASE_URL starts with "sqlite", so a temp-file URL is silently ignored.
-# To guarantee a clean, isolated DB every run we delete the repo DB file
-# before create_app() (which calls db.create_all()) recreates it empty.
-import os as _os
-_DB_PATH = _os.path.join(_os.path.abspath(_os.path.dirname(__file__)), "tripleforce.db")
-if _os.path.exists(_DB_PATH):
-    _os.remove(_DB_PATH)
+import tempfile
 
 # ── Isolated test database so we never touch real data ──
-os.environ["DATABASE_URL"] = "sqlite:///tripleforce.db"
+_TEST_DB = tempfile.NamedTemporaryFile(prefix="tripleforce-access-", suffix=".db", delete=False)
+_TEST_DB.close()
+os.environ["DATABASE_URL"] = "sqlite:///" + _TEST_DB.name
 os.environ["SECRET_KEY"] = "test-secret-key-access-control"
 os.environ["FLASK_DEBUG"] = "0"
 os.environ["MAIL_USERNAME"] = ""  # disable SMTP in tests
@@ -233,6 +227,10 @@ def main():
     print("=" * 64)
     print(f"ACCESS-CONTROL TESTS: {PASS} passed, {FAIL} failed")
     print("=" * 64)
+    try:
+        os.unlink(_TEST_DB.name)
+    except OSError:
+        pass
     return 1 if FAIL else 0
 
 

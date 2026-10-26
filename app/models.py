@@ -28,7 +28,10 @@ class User(UserMixin, db.Model):
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
     phone = db.Column(db.String(30))
-    role = db.Column(db.String(20), default="admin")  # admin, dispatcher, driver
+    role = db.Column(db.String(20), default="admin")  # admin, dispatcher, driver, customer
+    # Customer users are tenant-scoped to exactly one CRM customer.
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True, index=True)
+    customer_record = db.relationship("Customer", foreign_keys=[customer_id], backref="portal_users")
     is_active_user = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
@@ -58,6 +61,10 @@ class User(UserMixin, db.Model):
     def is_driver(self):
         return self.role == "driver"
 
+    @property
+    def is_customer(self):
+        return self.role == "customer"
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
 
@@ -70,6 +77,33 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f"<User {self.email}>"
+
+
+class CustomerAccountRequest(db.Model):
+    __tablename__ = "customer_account_requests"
+    id = db.Column(db.Integer, primary_key=True)
+    business_name = db.Column(db.String(255), nullable=False)
+    contact_name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    phone = db.Column(db.String(30), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="pending", index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    review_reason = db.Column(db.String(500))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user = db.relationship("User", foreign_keys=[user_id])
+
+
+class CustomerInvitation(db.Model):
+    __tablename__ = "customer_invitations"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    redeemed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -16,6 +16,8 @@ auth = Blueprint("auth", __name__)
 
 def _default_landing_page(user):
     """Return the appropriate landing route for a user's role."""
+    if user.role == "customer":
+        return url_for("customer_portal.dashboard")
     if user.role == "driver":
         return url_for("driver_portal.dashboard")
     return url_for("main.dashboard")
@@ -54,6 +56,13 @@ def login():
             # Guard against open redirect: only honor same-site relative URLs.
             if next_page and not _is_safe_url(next_page):
                 next_page = None
+            if user.role == "customer" and next_page:
+                # A same-site URL can still be a staff-only endpoint.
+                path = urlparse(next_page).path
+                allowed_paths = {url_for("customer_portal.dashboard"), url_for("customer_portal.deliveries"),
+                                 url_for("customer_portal.invoices"), url_for("auth.change_password")}
+                if path not in allowed_paths and not path.startswith("/customer/deliveries/") and not path.startswith("/customer/invoices/"):
+                    next_page = None
             flash("Welcome back!", "success")
             return redirect(next_page or _default_landing_page(user))
         flash("Invalid email or password.", "danger")
@@ -123,12 +132,15 @@ def change_password():
     if form.validate_on_submit():
         if not current_user.check_password(form.current_password.data):
             flash("Current password is incorrect.", "danger")
-            return render_template("auth/change_password.html", form=form)
+            template = "customer_portal/change_password.html" if current_user.role == "customer" else "auth/change_password.html"
+            return render_template(template, form=form)
         if form.new_password.data != form.confirm.data:
             flash("New passwords do not match.", "danger")
-            return render_template("auth/change_password.html", form=form)
+            template = "customer_portal/change_password.html" if current_user.role == "customer" else "auth/change_password.html"
+            return render_template(template, form=form)
         current_user.set_password(form.new_password.data)
         db.session.commit()
         flash("Password changed successfully.", "success")
-        return redirect(url_for("main.settings"))
-    return render_template("auth/change_password.html", form=form)
+        return redirect(_default_landing_page(current_user) if current_user.role == "customer" else url_for("main.settings"))
+    template = "customer_portal/change_password.html" if current_user.role == "customer" else "auth/change_password.html"
+    return render_template(template, form=form)

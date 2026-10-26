@@ -62,7 +62,7 @@
                 <h6 class="text-muted text-uppercase mb-2"><i class="bi bi-file-earmark-text"></i> Contract</h6>
                 {% if customer.contract_filename %}
                 <p class="mb-0">
-                    <a href="{{ url_for('static', filename='uploads/contracts/' + customer.contract_filename) }}" target="_blank">
+                    <a href="{{ url_for('customers.contract_file', customer_id=customer.id, filename=customer.contract_filename) }}" target="_blank">
                         <i class="bi bi-download"></i> Download Contract
                     </a>
                 </p>

@@ -8,6 +8,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
 class Config:
+    # Set to 0 when using controlled Alembic migrations in managed environments.
+    AUTO_CREATE_SCHEMA = os.environ.get("AUTO_CREATE_SCHEMA", "1").lower() in ("true", "1", "yes")
     # ── Security ──
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     SESSION_COOKIE_HTTPONLY = True

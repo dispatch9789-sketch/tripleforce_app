@@ -37,6 +37,26 @@ class ChangePasswordForm(FlaskForm):
     submit = SubmitField("Change Password")
 
 
+class CustomerAccountRequestForm(FlaskForm):
+    business_name = StringField("Facility / business name", validators=[DataRequired(), Length(max=255)])
+    contact_name = StringField("Contact person", validators=[DataRequired(), Length(max=200)])
+    email = StringField("Work email", validators=[DataRequired(), Email(), Length(max=255)])
+    phone = StringField("Phone", validators=[DataRequired(), Length(max=30)])
+    submit = SubmitField("Request customer access")
+
+
+class CustomerAccountReviewForm(FlaskForm):
+    customer_id = SelectField("Link to customer account", coerce=int, validators=[Optional()])
+    review_reason = StringField("Internal note", validators=[Optional(), Length(max=500)])
+    submit = SubmitField("Approve and invite")
+
+
+class CustomerInvitationForm(FlaskForm):
+    password = PasswordField("Create password", validators=[DataRequired(), Length(min=8)])
+    confirm = PasswordField("Confirm password", validators=[DataRequired()])
+    submit = SubmitField("Activate account")
+
+
 # ═══════════════════════════════════════════════════════════════
 #  CUSTOMER FORMS
 # ═══════════════════════════════════════════════════════════════

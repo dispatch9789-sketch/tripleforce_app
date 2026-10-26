@@ -1,9 +1,10 @@
 """Customers blueprint: CRM for prospects and active clients."""
 import csv
+import os
 from io import StringIO, BytesIO
 from datetime import date
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, Response, send_file
+from flask import Blueprint, render_template, redirect, url_for, request, flash, Response, send_file, send_from_directory, current_app, abort
 from flask_login import login_required
 
 from app.extensions import db
@@ -12,6 +13,17 @@ from app.forms import CustomerForm, ContactForm
 from app.utils import dispatcher_or_above, save_uploaded_file
 
 customers = Blueprint("customers", __name__)
+
+
+@customers.route("/<int:customer_id>/contract/<path:filename>")
+@login_required
+@dispatcher_or_above
+def contract_file(customer_id, filename):
+    customer = Customer.query.get_or_404(customer_id)
+    if not customer.contract_filename or filename != customer.contract_filename:
+        abort(404)
+    return send_from_directory(os.path.join(current_app.config["UPLOAD_FOLDER"], "contracts"), filename,
+                              as_attachment=False, max_age=0)
 
 
 @customers.route("/")
