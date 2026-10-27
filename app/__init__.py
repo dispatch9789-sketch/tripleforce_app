@@ -109,8 +109,14 @@ def create_app(config_class=Config):
     # db.create_all() does not add columns to existing tables. This
     # idempotent ALTER TABLE pass makes new customer-form fields persist on
     # already-deployed databases without losing existing data.
-    from app.schema_migrations import ensure_delivery_columns, ensure_pricing_columns, seed_checklist_items
+    from app.schema_migrations import (
+        ensure_customer_portal_schema,
+        ensure_delivery_columns,
+        ensure_pricing_columns,
+        seed_checklist_items,
+    )
     if app.config.get("AUTO_CREATE_SCHEMA", True):
+        ensure_customer_portal_schema(app, db)
         ensure_delivery_columns(app, db)
         ensure_pricing_columns(app, db)
         seed_checklist_items(app, db)

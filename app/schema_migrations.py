@@ -56,6 +56,44 @@ _NEW_PRICING_COLUMNS = [
 ]
 
 
+def ensure_customer_portal_schema(app, db):
+    """Add the nullable customer link required by customer logins.
+
+    ``db.create_all()`` creates the two new account-request tables on a fresh
+    deploy, but it cannot add ``customer_id`` to an existing ``users`` table.
+    Railway currently starts Gunicorn directly, so keep this one additive
+    change in the same idempotent startup path as the delivery and pricing
+    compatibility columns.
+    """
+    with app.app_context():
+        inspector = inspect(db.engine)
+        tables = set(inspector.get_table_names())
+        if "users" not in tables or "customers" not in tables:
+            return
+
+        existing = {c["name"] for c in inspector.get_columns("users")}
+        if "customer_id" not in existing:
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(text(
+                        'ALTER TABLE users ADD COLUMN customer_id '
+                        'INTEGER REFERENCES customers(id)'
+                    ))
+                logger.info("Schema migration: added users.customer_id")
+            except Exception:
+                # Multiple workers can start together. Treat an already-added
+                # column as a successful concurrent migration.
+                current = {c["name"] for c in inspect(db.engine).get_columns("users")}
+                if "customer_id" not in current:
+                    raise
+
+        with db.engine.begin() as conn:
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_users_customer_id "
+                "ON users (customer_id)"
+            ))
+
+
 def ensure_delivery_columns(app, db):
     """Add any missing public-pickup columns to the deliveries table."""
     with app.app_context():
