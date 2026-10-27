@@ -57,6 +57,14 @@ class CustomerInvitationForm(FlaskForm):
     submit = SubmitField("Activate account")
 
 
+class DemoResetForm(FlaskForm):
+    confirmation = StringField(
+        'Type "CLEAR DEMO DATA" to confirm',
+        validators=[DataRequired(), Length(max=40)],
+    )
+    submit = SubmitField("Clear demo/test data")
+
+
 # ═══════════════════════════════════════════════════════════════
 #  CUSTOMER FORMS
 # ═══════════════════════════════════════════════════════════════

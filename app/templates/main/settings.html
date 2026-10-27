@@ -36,6 +36,11 @@
             <i class="bi bi-shield-lock"></i> Password
         </button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-danger" id="data-reset-tab" data-bs-toggle="tab" data-bs-target="#data-reset" type="button" role="tab">
+            <i class="bi bi-arrow-counterclockwise"></i> Data Reset
+        </button>
+    </li>
 </ul>
 
 <div class="tab-content" id="settingsTabContent">
@@ -417,6 +422,36 @@
                 <a href="{{ url_for('auth.change_password') }}" class="btn btn-tf-primary">
                     <i class="bi bi-key"></i> Change Password
                 </a>
+            </div>
+        </div>
+    </div>
+
+    {# ════════════ DATA RESET ════════════ #}
+    <div class="tab-pane fade" id="data-reset" role="tabpanel">
+        <div class="card border-danger">
+            <div class="card-header text-bg-danger"><i class="bi bi-exclamation-triangle"></i> Clear Demo/Test Data</div>
+            <div class="card-body">
+                <p>This clears the prototype records so the operating system can start fresh:</p>
+                <ul>
+                    <li>Customers, contacts, and customer portal accounts</li>
+                    <li>Account requests and invitations</li>
+                    <li>Deliveries, tracking history, PODs, and chain of custody</li>
+                    <li>Quotes, invoices, payments, reminders, and test driver activity</li>
+                </ul>
+                <div class="alert alert-light border">
+                    <strong>Preserved:</strong> staff logins, driver profiles, company information, pricing,
+                    email templates, expenses, outreach prospects, and your logo.
+                </div>
+                <p class="text-danger fw-semibold">This action cannot be undone.</p>
+                <form method="POST" action="{{ url_for('main.clear_demo_data') }}" novalidate
+                      onsubmit="return confirm('Clear all demo/test operational data and start fresh?');">
+                    {{ demo_reset_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ demo_reset_form.confirmation.label(class="form-label") }}
+                        {{ demo_reset_form.confirmation(class="form-control", autocomplete="off", placeholder="CLEAR DEMO DATA") }}
+                    </div>
+                    {{ demo_reset_form.submit(class="btn btn-danger") }}
+                </form>
             </div>
         </div>
     </div>

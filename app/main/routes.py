@@ -12,7 +12,7 @@ from app.models import (
 )
 from app.forms import (
     CompanySettingsForm, PricingSettingsForm, EmailTemplateForm,
-    DriverForm, ExpenseForm,
+    DriverForm, ExpenseForm, DemoResetForm,
 )
 from app.utils import (
     get_company_settings, get_pricing_settings, save_uploaded_file,
@@ -181,6 +181,7 @@ def settings():
     expenses = Expense.query.order_by(Expense.date.desc()).limit(50).all()
     driver_form = DriverForm()
     expense_form = ExpenseForm()
+    demo_reset_form = DemoResetForm()
     return render_template("main/settings.html",
         company_form=company_form,
         pricing_form=pricing_form,
@@ -189,6 +190,7 @@ def settings():
         driver_form=driver_form,
         expenses=expenses,
         expense_form=expense_form,
+        demo_reset_form=demo_reset_form,
         template_types=EMAIL_TEMPLATE_TYPES,
     )
 
@@ -356,6 +358,35 @@ def add_expense():
             for e in errors:
                 flash(f"{field}: {e}", "danger")
     return redirect(url_for("main.settings") + "#expenses")
+
+
+@main.route("/settings/clear-demo-data", methods=["POST"])
+@login_required
+@admin_required
+def clear_demo_data():
+    """Clear prototype operational records after explicit admin confirmation."""
+    form = DemoResetForm()
+    if not form.validate_on_submit() or form.confirmation.data.strip() != "CLEAR DEMO DATA":
+        flash('Reset cancelled. Type "CLEAR DEMO DATA" exactly to confirm.', "danger")
+        return redirect(url_for("main.settings") + "#data-reset")
+
+    from app.demo_reset import clear_demo_data as perform_reset
+
+    try:
+        counts = perform_reset()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Demo data reset failed")
+        flash("Nothing was cleared because the reset could not be completed.", "danger")
+        return redirect(url_for("main.settings") + "#data-reset")
+
+    total = sum(counts.values())
+    flash(
+        f"Demo data cleared ({total} primary records). "
+        "Staff accounts, drivers, settings, pricing, expenses, and outreach were preserved.",
+        "success",
+    )
+    return redirect(url_for("main.dashboard"))
 
 
 # ═══════════════════════════════════════════════════════════════
