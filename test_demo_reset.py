@@ -132,7 +132,9 @@ def test_owner_dispatch_login_can_reset_from_customer_page(seeded_app):
     owner = logged_in_client(app, ids["dispatcher"])
     page = owner.get("/customers/")
     assert page.status_code == 200
-    assert b"Start Fresh" in page.data
+    assert b"Reset demo" in page.data
+    assert b"Start Fresh" not in page.data
+    assert b'type="hidden" name="confirmation" value="CLEAR DEMO DATA"' in page.data
     response = owner.post(
         "/customers/clear-demo-data", data={"confirmation": "CLEAR DEMO DATA"}
     )
@@ -144,7 +146,7 @@ def test_owner_dispatch_login_can_reset_from_customer_page(seeded_app):
 def test_other_dispatcher_cannot_use_owner_reset(seeded_app):
     app, ids = seeded_app
     dispatcher = logged_in_client(app, ids["other_dispatcher"])
-    assert b"Start Fresh" not in dispatcher.get("/customers/").data
+    assert b"Reset demo" not in dispatcher.get("/customers/").data
     response = dispatcher.post(
         "/customers/clear-demo-data", data={"confirmation": "CLEAR DEMO DATA"}
     )
