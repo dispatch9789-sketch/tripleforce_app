@@ -38,10 +38,12 @@ def seeded_app():
         db.create_all()
         customer = Customer(business_name="Demo Facility", category="Laboratory")
         admin = User(email="admin@example.test", role="admin", is_active_user=True)
-        dispatcher = User(email="dispatch@example.test", role="dispatcher", is_active_user=True)
+        dispatcher = User(email="dispatch@tripleforcelogistic.com", role="dispatcher", is_active_user=True)
+        other_dispatcher = User(email="other-dispatch@example.test", role="dispatcher", is_active_user=True)
         admin.set_password("AdminPass123!")
         dispatcher.set_password("DispatchPass123!")
-        db.session.add_all([customer, admin, dispatcher])
+        other_dispatcher.set_password("OtherDispatchPass123!")
+        db.session.add_all([customer, admin, dispatcher, other_dispatcher])
         db.session.flush()
         customer_user = User(
             email="customer@example.test", role="customer",
@@ -67,7 +69,11 @@ def seeded_app():
         )
         db.session.add(invitation)
         db.session.commit()
-        ids = {"admin": admin.id, "dispatcher": dispatcher.id}
+        ids = {
+            "admin": admin.id,
+            "dispatcher": dispatcher.id,
+            "other_dispatcher": other_dispatcher.id,
+        }
     yield app, ids
     with app.app_context():
         db.session.remove()
@@ -116,6 +122,32 @@ def test_reset_clears_demo_records_and_preserves_business_configuration(seeded_a
         assert CustomerAccountRequest.query.count() == 0
         assert CustomerInvitation.query.count() == 0
         assert User.query.filter_by(role="customer").count() == 0
-        assert User.query.filter(User.role.in_(["admin", "dispatcher", "driver"])).count() == 2
+        assert User.query.filter(User.role.in_(["admin", "dispatcher", "driver"])).count() == 3
         assert Expense.query.count() == 1
         assert Prospect.query.count() == 1
+
+
+def test_owner_dispatch_login_can_reset_from_customer_page(seeded_app):
+    app, ids = seeded_app
+    owner = logged_in_client(app, ids["dispatcher"])
+    page = owner.get("/customers/")
+    assert page.status_code == 200
+    assert b"Start Fresh" in page.data
+    response = owner.post(
+        "/customers/clear-demo-data", data={"confirmation": "CLEAR DEMO DATA"}
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        assert Customer.query.count() == 0
+
+
+def test_other_dispatcher_cannot_use_owner_reset(seeded_app):
+    app, ids = seeded_app
+    dispatcher = logged_in_client(app, ids["other_dispatcher"])
+    assert b"Start Fresh" not in dispatcher.get("/customers/").data
+    response = dispatcher.post(
+        "/customers/clear-demo-data", data={"confirmation": "CLEAR DEMO DATA"}
+    )
+    assert response.status_code == 403
+    with app.app_context():
+        assert Customer.query.count() == 1

@@ -57,6 +57,31 @@
     </div>
 </div>
 
+{% if can_reset_demo_data and pagination and pagination.total > 0 %}
+<div class="card border-danger mb-3">
+    <div class="card-header text-bg-danger">
+        <i class="bi bi-arrow-counterclockwise"></i> Start Fresh
+    </div>
+    <div class="card-body">
+        <p class="mb-2">Clear the test customers shown below and their connected demo deliveries, quotes, invoices, and tracking records.</p>
+        <p class="small text-muted">Your staff login, company settings, pricing, expenses, outreach prospects, and driver profiles will remain.</p>
+        <form method="POST" action="{{ url_for('customers.clear_demo_data') }}"
+              onsubmit="return confirm('Clear all demo/test customer and operational data?');">
+            {{ demo_reset_form.hidden_tag() }}
+            <div class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    {{ demo_reset_form.confirmation.label(class="form-label") }}
+                    {{ demo_reset_form.confirmation(class="form-control", autocomplete="off", placeholder="CLEAR DEMO DATA") }}
+                </div>
+                <div class="col-md-4 d-grid">
+                    {{ demo_reset_form.submit(class="btn btn-danger") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- ── Customer Table ── -->
 <div class="card">
     <div class="card-body p-0">

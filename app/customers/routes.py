@@ -5,14 +5,23 @@ from io import StringIO, BytesIO
 from datetime import date
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash, Response, send_file, send_from_directory, current_app, abort
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models import Customer, Contact, Delivery, Invoice
-from app.forms import CustomerForm, ContactForm
+from app.forms import CustomerForm, ContactForm, DemoResetForm
 from app.utils import dispatcher_or_above, save_uploaded_file
 
 customers = Blueprint("customers", __name__)
+OWNER_RESET_EMAIL = "dispatch@tripleforcelogistic.com"
+
+
+def can_reset_demo_data():
+    """Limit destructive demo reset to admins and the owner's dispatch login."""
+    return current_user.is_authenticated and (
+        current_user.role == "admin"
+        or (current_user.email or "").strip().lower() == OWNER_RESET_EMAIL
+    )
 
 
 @customers.route("/<int:customer_id>/contract/<path:filename>")
@@ -51,8 +60,46 @@ def index():
         )
 
     pagination = query.order_by(Customer.business_name).paginate(page=page, per_page=20, error_out=False)
-    return render_template("customers/index.html", customers=pagination.items, pagination=pagination,
-                           status=status, category=category, search=search)
+    return render_template(
+        "customers/index.html",
+        customers=pagination.items,
+        pagination=pagination,
+        status=status,
+        category=category,
+        search=search,
+        demo_reset_form=DemoResetForm(),
+        can_reset_demo_data=can_reset_demo_data(),
+    )
+
+
+@customers.route("/clear-demo-data", methods=["POST"])
+@login_required
+@dispatcher_or_above
+def clear_demo_data():
+    if not can_reset_demo_data():
+        abort(403)
+
+    form = DemoResetForm()
+    if not form.validate_on_submit() or form.confirmation.data.strip() != "CLEAR DEMO DATA":
+        flash('Reset cancelled. Type "CLEAR DEMO DATA" exactly.', "danger")
+        return redirect(url_for("customers.index"))
+
+    from app.demo_reset import clear_demo_data as perform_reset
+
+    try:
+        counts = perform_reset()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Customer-page demo data reset failed")
+        flash("Nothing was cleared because the reset could not be completed.", "danger")
+        return redirect(url_for("customers.index"))
+
+    flash(
+        f"Demo data cleared ({sum(counts.values())} primary records). "
+        "The Triple Force app is ready for fresh customer data.",
+        "success",
+    )
+    return redirect(url_for("customers.index"))
 
 
 @customers.route("/<int:customer_id>")
